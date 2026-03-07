@@ -195,6 +195,14 @@
 }
 
 /* Books */
+.add-book-section {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
 .books-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

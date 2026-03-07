@@ -5,32 +5,33 @@
 
 .book-search-input {
   width: 100%;
-  padding: 1rem 1.5rem;
-  background: rgba(10, 10, 15, 0.8);
-  color: var(--text-light);
-  border: 2px solid rgba(157, 78, 221, 0.3);
-  border-radius: 8px;
+  padding: var(--space-md) var(--space-lg);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
   font-family: var(--font-sans);
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   outline: none;
 }
 
 .book-search-input:focus {
-  border-color: #00ffff;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  border-color: #FF6B9D;
+  box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.15);
+  background-color: var(--bg-secondary);
 }
 
 .book-search-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
 }
 
 .book-search-loading {
   position: absolute;
-  right: 1rem;
+  right: var(--space-md);
   top: 50%;
   transform: translateY(-50%);
-  color: #9d4edd;
+  color: #FF6B9D;
   font-size: 0.9rem;
   animation: spin 1s linear infinite;
 }
@@ -46,13 +47,13 @@
   top: calc(100% + 0.5rem);
   left: 0;
   right: 0;
-  background: rgba(10, 10, 15, 0.98);
-  border: 2px solid #9d4edd;
-  border-radius: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid #FF6B9D;
+  border-radius: 6px;
   max-height: 400px;
   overflow-y: auto;
   z-index: 100;
-  box-shadow: 0 10px 30px rgba(157, 78, 221, 0.4);
+  box-shadow: 0 10px 30px rgba(255, 107, 157, 0.2);
   animation: dropdownAppear 0.2s ease;
 }
 
@@ -69,14 +70,14 @@
 
 .book-search-result {
   display: flex;
-  gap: 1rem;
-  padding: 0.75rem;
+  gap: var(--space-md);
+  padding: var(--space-md);
   background: none;
   border: none;
-  border-bottom: 1px solid rgba(157, 78, 221, 0.1);
+  border-bottom: 1px solid var(--border);
   text-align: left;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   width: 100%;
 }
 
@@ -85,8 +86,8 @@
 }
 
 .book-search-result:hover {
-  background: rgba(157, 78, 221, 0.2);
-  transform: translateX(5px);
+  background: rgba(255, 107, 157, 0.1);
+  transform: translateX(4px);
 }
 
 .book-search-cover {
@@ -108,7 +109,7 @@
 
 .book-search-title {
   font-weight: 600;
-  color: var(--text-light);
+  color: var(--text-primary);
   font-size: 0.95rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -120,12 +121,12 @@
 
 .book-search-author {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .book-search-empty {
-  padding: 1.5rem;
-  color: rgba(255, 255, 255, 0.5);
+  padding: var(--space-lg);
+  color: var(--text-secondary);
   text-align: center;
   font-size: 0.95rem;
 }

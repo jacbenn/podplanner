@@ -7,16 +7,13 @@ import { createSupabaseServerClient } from "~/lib/supabase.server";
 import type { Podcast, Episode, Book } from "~/types/models";
 import DeleteConfirmation from "~/components/DeleteConfirmation";
 import BookSearch from "~/components/BookSearch";
-import BookSearchModal from "~/components/BookSearchModal";
 import styles from "./podcast.css";
 import modalStyles from "~/components/DeleteConfirmation/styles.css";
-import bookModalStyles from "~/components/BookSearchModal/styles.css";
 import type { LinksFunction } from "@remix-run/node";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
   { rel: "stylesheet", href: modalStyles },
-  { rel: "stylesheet", href: bookModalStyles },
 ];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -120,9 +117,9 @@ export default function PodcastPage() {
   const { podcast, episodes: initialEpisodes, books } = useLoaderData<typeof loader>();
   const deleteFetcher = useFetcher();
   const episodeFetcher = useFetcher();
+  const bookFetcher = useFetcher();
   const [episodes, setEpisodes] = useState(initialEpisodes);
   const [editingEpisodeId, setEditingEpisodeId] = useState<string | null>(null);
-  const [addBookModalOpen, setAddBookModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
     type: "episode" | "book" | null;
@@ -142,6 +139,13 @@ export default function PodcastPage() {
       window.location.reload();
     }
   }, [deleteFetcher.state, deleteFetcher.data]);
+
+  // Reload page when book creation completes
+  useEffect(() => {
+    if (bookFetcher.state === "idle" && bookFetcher.data) {
+      window.location.reload();
+    }
+  }, [bookFetcher.state, bookFetcher.data]);
 
   const handleDeleteClick = (
     e: React.MouseEvent,
@@ -232,14 +236,25 @@ export default function PodcastPage() {
         <section className="books-section">
           <div className="section-header">
             <h2>Books</h2>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => setAddBookModalOpen(true)}
-            >
-              Add Book
-            </button>
           </div>
+
+          <div className="add-book-section">
+            <BookSearch
+              onSelect={(book) => {
+                const formData = new FormData();
+                formData.append("title", book.title);
+                formData.append("author", book.author);
+                formData.append("cover_url", book.cover_url || "");
+                formData.append("status", "upcoming");
+
+                bookFetcher.submit(formData, {
+                  method: "POST",
+                  action: `/podcasts/${podcast.id}/books/new`,
+                });
+              }}
+            />
+          </div>
+
           {books.length === 0 ? (
             <p className="empty-state">No books yet</p>
           ) : (
@@ -292,12 +307,6 @@ export default function PodcastPage() {
         message={deleteMessage}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
-      />
-
-      <BookSearchModal
-        open={addBookModalOpen}
-        onClose={() => setAddBookModalOpen(false)}
-        podcastId={podcast.id}
       />
     </div>
   );

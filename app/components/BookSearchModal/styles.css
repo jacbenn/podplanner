@@ -1,6 +1,11 @@
+.modal-body {
+  padding: var(--space-lg);
+}
+
 .book-search-container {
   position: relative;
   width: 100%;
+  min-height: 300px;
 }
 
 .input-wrapper {
