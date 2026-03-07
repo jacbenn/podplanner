@@ -1,0 +1,201 @@
+.podcast-page {
+  padding: var(--space-lg);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.podcast-header {
+  margin-bottom: var(--space-xl);
+  border-bottom: 2px solid var(--podcast-accent, #9d4edd);
+  padding-bottom: var(--space-lg);
+}
+
+.podcast-header h1 {
+  color: var(--text-primary);
+  font-size: 2rem;
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.podcast-header .description {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.podcast-content {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+}
+
+.section-header h2 {
+  color: var(--text-primary);
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.btn {
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--podcast-accent, #9d4edd);
+  color: white;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(157, 78, 221, 0.2);
+}
+
+.empty-state {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: var(--space-lg);
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+/* Episodes */
+.episodes-list {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.episode-card {
+  display: block;
+  padding: var(--space-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--podcast-accent, #9d4edd);
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.episode-card:hover {
+  border-left-color: var(--podcast-accent, #9d4edd);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateX(4px);
+}
+
+.episode-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.episode-num {
+  font-weight: bold;
+  color: var(--podcast-accent, #9d4edd);
+  font-size: 0.9rem;
+}
+
+.episode-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.filming-date {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: var(--space-xs) 0;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-planning {
+  background: rgba(144, 144, 168, 0.2);
+  color: var(--status-planning);
+}
+
+.status-recorded {
+  background: rgba(107, 170, 255, 0.2);
+  color: var(--status-recorded);
+}
+
+.status-published {
+  background: rgba(107, 255, 184, 0.2);
+  color: var(--status-published);
+}
+
+.status-aired {
+  background: rgba(255, 107, 157, 0.2);
+  color: var(--status-aired);
+}
+
+.status-upcoming {
+  background: rgba(144, 144, 168, 0.2);
+  color: var(--status-planning);
+}
+
+.status-reading {
+  background: rgba(107, 170, 255, 0.2);
+  color: var(--status-recorded);
+}
+
+.status-finished {
+  background: rgba(107, 255, 184, 0.2);
+  color: var(--status-published);
+}
+
+/* Books */
+.books-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--space-md);
+}
+
+.book-card {
+  display: block;
+  padding: var(--space-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.book-card:hover {
+  border-color: var(--podcast-accent, #9d4edd);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+}
+
+.book-card h3 {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.book-card .author {
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-sm) 0;
+  font-size: 0.95rem;
+}
