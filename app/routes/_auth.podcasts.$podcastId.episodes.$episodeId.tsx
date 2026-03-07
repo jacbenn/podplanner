@@ -92,35 +92,10 @@ export async function action({
   const filmingTime = formData.get("filming_time") || null;
   const status = String(formData.get("status")) as any;
   const notes = formData.get("notes") || null;
-  const bookTitle = formData.get("book_title") || null;
-  const bookAuthor = formData.get("book_author") || null;
-  const bookCoverUrl = formData.get("book_cover_url") || null;
+  const bookId = formData.get("book_id") || null;
 
   if (!title) {
     return json({ error: "Title is required" }, { status: 400, headers });
-  }
-
-  let bookId = null;
-
-  // Create new book if one was selected from search
-  if (bookTitle && bookAuthor) {
-    const { data: newBook, error: bookError } = await supabase
-      .from("books")
-      .insert({
-        podcast_id: podcastId,
-        title: bookTitle,
-        author: bookAuthor,
-        cover_url: bookCoverUrl,
-        status: "upcoming",
-      })
-      .select("id")
-      .single();
-
-    if (bookError) {
-      return json({ error: bookError.message }, { status: 500, headers });
-    }
-
-    bookId = newBook?.id;
   }
 
   const { error } = await supabase

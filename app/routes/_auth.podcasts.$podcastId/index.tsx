@@ -6,7 +6,7 @@ import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
 import type { Podcast, Episode, Book } from "~/types/models";
 import DeleteConfirmation from "~/components/DeleteConfirmation";
-import BookSearch from "~/components/BookSearch";
+import BookSearch, { links as bookSearchLinks } from "~/components/BookSearch";
 import styles from "./podcast.css";
 import modalStyles from "~/components/DeleteConfirmation/styles.css";
 import type { LinksFunction } from "@remix-run/node";
@@ -14,6 +14,7 @@ import type { LinksFunction } from "@remix-run/node";
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
   { rel: "stylesheet", href: modalStyles },
+  ...bookSearchLinks(),
 ];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -176,6 +177,13 @@ export default function PodcastPage() {
     setDeleteConfirm({ isOpen: false, type: null, id: null, title: "" });
   };
 
+  const handleDeleteBook = (bookId: string) => {
+    deleteFetcher.submit(
+      { type: "book", id: bookId },
+      { method: "delete" }
+    );
+  };
+
   const deleteMessage =
     deleteConfirm.type === "episode"
       ? `Are you sure you want to delete the episode "${deleteConfirm.title}"? This cannot be undone.`
@@ -218,6 +226,7 @@ export default function PodcastPage() {
                   episodeId={editingEpisodeId}
                   episode={episodes.find((e) => e.id === editingEpisodeId)!}
                   podcast={podcast}
+                  books={books}
                   episodeFetcher={episodeFetcher}
                   onClose={() => setEditingEpisodeId(null)}
                   onDeleteClick={() => {
@@ -275,9 +284,6 @@ export default function PodcastPage() {
                     <div className="book-info">
                       <h3>{book.title}</h3>
                       <p className="author">{book.author}</p>
-                      <span className={`status-badge status-${book.status}`}>
-                        {book.status}
-                      </span>
                     </div>
                   </Link>
                   <div className="delete-form">
@@ -285,9 +291,7 @@ export default function PodcastPage() {
                       type="button"
                       className="btn-delete"
                       title="Delete book"
-                      onClick={(e) =>
-                        handleDeleteClick(e, "book", book.id, book.title)
-                      }
+                      onClick={() => handleDeleteBook(book.id)}
                     >
                       ✕
                     </button>
@@ -379,6 +383,7 @@ interface EpisodeEditModalProps {
   episodeId: string;
   episode: Episode & { book?: Book | null };
   podcast: Podcast;
+  books: Book[];
   episodeFetcher: ReturnType<typeof useFetcher>;
   onClose: () => void;
   onDeleteClick: () => void;
@@ -388,6 +393,7 @@ function EpisodeEditModal({
   episodeId,
   episode,
   podcast,
+  books,
   episodeFetcher,
   onClose,
   onDeleteClick,
@@ -400,23 +406,8 @@ function EpisodeEditModal({
     filming_date: episode.filming_date || "",
     filming_time: episode.filming_time || "",
     notes: episode.notes || "",
-    book_title: episode.book?.title || "",
-    book_author: episode.book?.author || "",
-    book_cover_url: episode.book?.cover_url || "",
+    book_id: episode.book?.id || "",
   });
-
-  const handleBookSelect = (book: {
-    title: string;
-    author: string;
-    cover_url: string | null;
-  }) => {
-    setFormData({
-      ...formData,
-      book_title: book.title,
-      book_author: book.author,
-      book_cover_url: book.cover_url || "",
-    });
-  };
 
   // Close on successful submission
   useEffect(() => {
@@ -522,23 +513,23 @@ function EpisodeEditModal({
           </div>
 
           <div className="form-group">
-            <label>Book (optional)</label>
-            <BookSearch onSelect={handleBookSelect} />
-            {formData.book_title && (
-              <p style={{ marginTop: "0.5rem", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-                Current: <strong>{formData.book_title}</strong> by{" "}
-                {formData.book_author}
-              </p>
-            )}
+            <label htmlFor="book_id">Book (optional)</label>
+            <select
+              id="book_id"
+              name="book_id"
+              value={formData.book_id}
+              onChange={(e) =>
+                setFormData({ ...formData, book_id: e.target.value })
+              }
+            >
+              <option value="">Select a book</option>
+              {books.map((book) => (
+                <option key={book.id} value={book.id}>
+                  {book.title} by {book.author}
+                </option>
+              ))}
+            </select>
           </div>
-
-          <input type="hidden" name="book_title" value={formData.book_title} />
-          <input type="hidden" name="book_author" value={formData.book_author} />
-          <input
-            type="hidden"
-            name="book_cover_url"
-            value={formData.book_cover_url}
-          />
 
           <div className="form-group">
             <label htmlFor="notes">Notes</label>

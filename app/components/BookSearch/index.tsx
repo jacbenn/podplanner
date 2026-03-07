@@ -59,47 +59,67 @@ export default function BookSearch({ onSelect }: BookSearchProps) {
 
   return (
     <div className="book-search">
-      <input
-        type="text"
-        placeholder="Search for a book by title or author..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="book-search-input"
-      />
+      <div className="book-search-input-group">
+        <div className="book-search-input-wrapper">
+          <input
+            type="text"
+            placeholder="Search for a book..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="book-search-input"
+          />
 
-      {loading && <div className="book-search-loading">Searching...</div>}
+          {loading && <div className="book-search-loading">Searching...</div>}
 
-      {showResults && results.length > 0 && (
-        <div className="book-search-results">
-          {results.map((result, index) => (
-            <button
-              key={index}
-              type="button"
-              className="book-search-result"
-              onClick={() => handleSelect(result)}
-            >
-              {result.coverUrl && (
-                <img
-                  src={result.coverUrl}
-                  alt={result.title}
-                  className="book-search-cover"
-                />
-              )}
-              <div className="book-search-info">
-                <div className="book-search-title">{result.title}</div>
-                <div className="book-search-author">
-                  {result.author}
-                  {result.year && ` (${result.year})`}
-                </div>
-              </div>
-            </button>
-          ))}
+          {showResults && results.length > 0 && (
+            <div className="book-search-results">
+              {results.map((result, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className="book-search-result"
+                  onClick={() => handleSelect(result)}
+                >
+                  {result.coverUrl && (
+                    <img
+                      src={result.coverUrl}
+                      alt={result.title}
+                      className="book-search-cover"
+                    />
+                  )}
+                  <div className="book-search-info">
+                    <div className="book-search-title">{result.title}</div>
+                    <div className="book-search-author">
+                      {result.author}
+                      {result.year && ` (${result.year})`}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {showResults && results.length === 0 && !loading && query.length > 2 && (
+            <div className="book-search-empty">No books found</div>
+          )}
         </div>
-      )}
 
-      {showResults && results.length === 0 && !loading && query.length > 2 && (
-        <div className="book-search-empty">No books found</div>
-      )}
+        <button
+          type="button"
+          className="book-search-add-btn"
+          disabled={!query.trim()}
+          onClick={() => {
+            if (query.trim()) {
+              // Trigger search on button click if there are results
+              if (results.length > 0) {
+                handleSelect(results[0]);
+              }
+            }
+          }}
+        >
+          + Add
+        </button>
+      </div>
     </div>
   );
 }
