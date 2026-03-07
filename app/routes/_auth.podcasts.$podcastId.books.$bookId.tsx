@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData, Form, useActionData } from "@remix-run/react";
+import { useLoaderData, Form, useActionData, useFetcher, useNavigate, useParams } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
 import BookSearch from "~/components/BookSearch";
+import DeleteConfirmation from "~/components/DeleteConfirmation";
+import modalStyles from "~/components/DeleteConfirmation/styles.css";
 import type { Book } from "~/types/models";
+import type { LinksFunction } from "@remix-run/node";
+
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: modalStyles },
+];
 
 export async function loader({
   request,
@@ -63,7 +70,7 @@ export async function action({
       return json({ error: error.message }, { status: 500, headers });
     }
 
-    return redirect(`/podcasts/${podcastId}`, { headers });
+    return json({ success: true }, { headers });
   }
 
   if (request.method !== "POST") {
@@ -106,9 +113,21 @@ export async function action({
 export default function BookDetailPage() {
   const { book } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const { podcastId } = useParams();
+  const navigate = useNavigate();
+  const deleteFetcher = useFetcher();
   const [title, setTitle] = useState(book.title);
   const [author, setAuthor] = useState(book.author);
   const [coverUrl, setCoverUrl] = useState(book.cover_url || "");
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  // Handle deletion response
+  useEffect(() => {
+    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
+      // Deletion completed, navigate back to podcast page
+      navigate(`/podcasts/${podcastId}`);
+    }
+  }, [deleteFetcher.state, deleteFetcher.data, navigate, podcastId]);
 
   const handleBookSelect = (selectedBook: {
     title: string;
@@ -129,7 +148,7 @@ export default function BookDetailPage() {
         </div>
       </div>
 
-      <Form method="post" className="form">
+      <Form method="post" className="form" id="book-form">
         <div className="form-group">
           <label>Search to update book details</label>
           <BookSearch onSelect={handleBookSelect} />
@@ -167,19 +186,25 @@ export default function BookDetailPage() {
             Save Book
           </button>
           <button
-            type="submit"
-            formMethod="delete"
+            type="button"
             className="btn btn-danger"
-            onClick={(e) => {
-              if (!confirm("Are you sure you want to delete this book?")) {
-                e.preventDefault();
-              }
-            }}
+            onClick={() => setDeleteConfirm(true)}
           >
             Delete Book
           </button>
         </div>
       </Form>
+
+      <DeleteConfirmation
+        open={deleteConfirm}
+        title="Delete Book"
+        message={`Are you sure you want to delete the book "${book.title}"? This cannot be undone.`}
+        onConfirm={() => {
+          deleteFetcher.submit({}, { method: "delete" });
+          setDeleteConfirm(false);
+        }}
+        onCancel={() => setDeleteConfirm(false)}
+      />
     </div>
   );
 }

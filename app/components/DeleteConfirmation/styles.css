@@ -1,0 +1,73 @@
+.delete-confirmation-modal {
+  max-width: 400px;
+  border: 2px solid var(--podcast-accent, #9d4edd);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.delete-confirmation-modal::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.modal-content {
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-content h2 {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: 1.3rem;
+  color: var(--text-primary);
+}
+
+.modal-content p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.modal-actions {
+  padding: var(--space-lg);
+  display: flex;
+  gap: var(--space-md);
+  justify-content: flex-end;
+}
+
+.modal-actions .btn {
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.modal-actions .btn-cancel {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.modal-actions .btn-cancel:hover:not(:disabled) {
+  background: var(--border);
+  border-color: var(--text-secondary);
+}
+
+.modal-actions .btn-danger {
+  background: rgba(255, 107, 157, 0.9);
+  color: white;
+}
+
+.modal-actions .btn-danger:hover:not(:disabled) {
+  background: rgba(255, 107, 157, 1);
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.4);
+}
+
+.modal-actions .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

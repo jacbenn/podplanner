@@ -1,14 +1,18 @@
+import { useState, useEffect } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData, Link, Outlet, Form } from "@remix-run/react";
+import { useLoaderData, Link, Outlet, Form, useFetcher } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
 import type { Podcast, Episode, Book } from "~/types/models";
+import DeleteConfirmation from "~/components/DeleteConfirmation";
 import styles from "./podcast.css";
+import modalStyles from "~/components/DeleteConfirmation/styles.css";
 import type { LinksFunction } from "@remix-run/node";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
+  { rel: "stylesheet", href: modalStyles },
 ];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -98,11 +102,65 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return json({ error: error.message }, { status: 500, headers });
   }
 
-  return redirect(`/podcasts/${podcastId}`, { headers });
+  return json({ success: true }, { headers });
 }
 
 export default function PodcastPage() {
   const { podcast, episodes, books } = useLoaderData<typeof loader>();
+  const deleteFetcher = useFetcher();
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    type: "episode" | "book" | null;
+    id: string | null;
+    title: string;
+  }>({
+    isOpen: false,
+    type: null,
+    id: null,
+    title: "",
+  });
+
+  // Reload page when deletion completes
+  useEffect(() => {
+    if (deleteFetcher.state === "idle" && deleteFetcher.data?.success) {
+      // Reload to refresh the episode/book list
+      window.location.reload();
+    }
+  }, [deleteFetcher.state, deleteFetcher.data]);
+
+  const handleDeleteClick = (
+    e: React.MouseEvent,
+    type: "episode" | "book",
+    id: string,
+    title: string
+  ) => {
+    e.preventDefault();
+    setDeleteConfirm({
+      isOpen: true,
+      type,
+      id,
+      title,
+    });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteConfirm.id && deleteConfirm.type) {
+      deleteFetcher.submit(
+        { type: deleteConfirm.type, id: deleteConfirm.id },
+        { method: "delete" }
+      );
+    }
+    setDeleteConfirm({ isOpen: false, type: null, id: null, title: "" });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ isOpen: false, type: null, id: null, title: "" });
+  };
+
+  const deleteMessage =
+    deleteConfirm.type === "episode"
+      ? `Are you sure you want to delete the episode "${deleteConfirm.title}"? This cannot be undone.`
+      : `Are you sure you want to delete the book "${deleteConfirm.title}"? This cannot be undone.`;
 
   return (
     <div
@@ -150,22 +208,23 @@ export default function PodcastPage() {
                       {episode.status}
                     </span>
                   </Link>
-                  <Form method="post" className="delete-form">
-                    <input type="hidden" name="type" value="episode" />
-                    <input type="hidden" name="id" value={episode.id} />
+                  <div className="delete-form">
                     <button
-                      type="submit"
+                      type="button"
                       className="btn-delete"
-                      onClick={(e) => {
-                        if (!confirm("Delete this episode?")) {
-                          e.preventDefault();
-                        }
-                      }}
                       title="Delete episode"
+                      onClick={(e) =>
+                        handleDeleteClick(
+                          e,
+                          "episode",
+                          episode.id,
+                          episode.title
+                        )
+                      }
                     >
                       ✕
                     </button>
-                  </Form>
+                  </div>
                 </div>
               ))}
             </div>
@@ -195,28 +254,34 @@ export default function PodcastPage() {
                       {book.status}
                     </span>
                   </Link>
-                  <Form method="post" className="delete-form">
-                    <input type="hidden" name="type" value="book" />
-                    <input type="hidden" name="id" value={book.id} />
+                  <div className="delete-form">
                     <button
-                      type="submit"
+                      type="button"
                       className="btn-delete"
-                      onClick={(e) => {
-                        if (!confirm("Delete this book?")) {
-                          e.preventDefault();
-                        }
-                      }}
                       title="Delete book"
+                      onClick={(e) =>
+                        handleDeleteClick(e, "book", book.id, book.title)
+                      }
                     >
                       ✕
                     </button>
-                  </Form>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </section>
       </div>
+
+      <DeleteConfirmation
+        open={deleteConfirm.isOpen}
+        title={
+          deleteConfirm.type === "episode" ? "Delete Episode" : "Delete Book"
+        }
+        message={deleteMessage}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
 
       <Outlet />
     </div>
