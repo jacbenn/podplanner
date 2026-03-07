@@ -7,13 +7,16 @@ import { createSupabaseServerClient } from "~/lib/supabase.server";
 import type { Podcast, Episode, Book } from "~/types/models";
 import DeleteConfirmation from "~/components/DeleteConfirmation";
 import BookSearch from "~/components/BookSearch";
+import BookSearchModal from "~/components/BookSearchModal";
 import styles from "./podcast.css";
 import modalStyles from "~/components/DeleteConfirmation/styles.css";
+import bookModalStyles from "~/components/BookSearchModal/styles.css";
 import type { LinksFunction } from "@remix-run/node";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
   { rel: "stylesheet", href: modalStyles },
+  { rel: "stylesheet", href: bookModalStyles },
 ];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -119,6 +122,7 @@ export default function PodcastPage() {
   const episodeFetcher = useFetcher();
   const [episodes, setEpisodes] = useState(initialEpisodes);
   const [editingEpisodeId, setEditingEpisodeId] = useState<string | null>(null);
+  const [addBookModalOpen, setAddBookModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
     type: "episode" | "book" | null;
@@ -188,7 +192,7 @@ export default function PodcastPage() {
       <div className="podcast-content">
         <section className="episodes-section">
           <div className="section-header">
-            <h2>Episodes</h2>
+            <h2>Episode</h2>
           </div>
           {episodes.length === 0 ? (
             <p className="empty-state">No episodes yet</p>
@@ -228,9 +232,13 @@ export default function PodcastPage() {
         <section className="books-section">
           <div className="section-header">
             <h2>Books</h2>
-            <Link to="books/new" className="btn btn-primary">
-              New Book
-            </Link>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setAddBookModalOpen(true)}
+            >
+              Add Book
+            </button>
           </div>
           {books.length === 0 ? (
             <p className="empty-state">No books yet</p>
@@ -242,11 +250,20 @@ export default function PodcastPage() {
                     to={`books/${book.id}`}
                     className="book-card"
                   >
-                    <h3>{book.title}</h3>
-                    <p className="author">{book.author}</p>
-                    <span className={`status-badge status-${book.status}`}>
-                      {book.status}
-                    </span>
+                    {book.cover_url && (
+                      <img
+                        src={book.cover_url}
+                        alt={book.title}
+                        className="book-cover-img"
+                      />
+                    )}
+                    <div className="book-info">
+                      <h3>{book.title}</h3>
+                      <p className="author">{book.author}</p>
+                      <span className={`status-badge status-${book.status}`}>
+                        {book.status}
+                      </span>
+                    </div>
                   </Link>
                   <div className="delete-form">
                     <button
@@ -276,6 +293,12 @@ export default function PodcastPage() {
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
       />
+
+      <BookSearchModal
+        open={addBookModalOpen}
+        onClose={() => setAddBookModalOpen(false)}
+        podcastId={podcast.id}
+      />
     </div>
   );
 }
@@ -299,21 +322,34 @@ function EpisodeCard({
         className="episode-card"
         onClick={onEditClick}
       >
-        <div className="episode-header">
-          {episode.episode_number && (
-            <span className="episode-num">#{episode.episode_number}</span>
+        <div className="episode-main">
+          <div>
+            <div className="episode-header">
+              {episode.episode_number && (
+                <span className="episode-num">#{episode.episode_number}</span>
+              )}
+              <h3>{episode.title}</h3>
+            </div>
+            {episode.filming_date && (
+              <p className="filming-date">
+                📅 {new Date(episode.filming_date).toLocaleDateString()}
+                {episode.filming_time && ` at ${episode.filming_time}`}
+              </p>
+            )}
+            <span className={`status-badge status-${episode.status}`}>
+              {episode.status}
+            </span>
+          </div>
+          {episode.book && episode.book.cover_url && (
+            <div className="episode-book-cover">
+              <img
+                src={episode.book.cover_url}
+                alt={episode.book.title}
+                title={episode.book.title}
+              />
+            </div>
           )}
-          <h3>{episode.title}</h3>
         </div>
-        {episode.filming_date && (
-          <p className="filming-date">
-            📅 {new Date(episode.filming_date).toLocaleDateString()}
-            {episode.filming_time && ` at ${episode.filming_time}`}
-          </p>
-        )}
-        <span className={`status-badge status-${episode.status}`}>
-          {episode.status}
-        </span>
       </button>
 
       <div className="delete-form">

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { useNavigate, useParams } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
