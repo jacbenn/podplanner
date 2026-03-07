@@ -1,0 +1,138 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  padding: var(--space-md);
+}
+
+.login-box {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-xl);
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.login-box h1 {
+  text-align: center;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+  font-size: 14px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: var(--space-sm);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form-group input {
+  padding: var(--space-md);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  border-color: var(--text-secondary);
+  outline: none;
+}
+
+.form-group input::placeholder {
+  color: var(--text-muted);
+}
+
+.error-message {
+  background-color: rgba(255, 107, 157, 0.1);
+  border: 1px solid #ff6b9d;
+  color: #ff6b9d;
+  padding: var(--space-md);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.submit-button {
+  background: linear-gradient(135deg, #ff6b9d, #ff8bb5);
+  color: white;
+  padding: var(--space-md);
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+  font-size: 16px;
+}
+
+.submit-button:hover {
+  opacity: 0.9;
+}
+
+.submit-button:active {
+  opacity: 0.8;
+}
+
+.divider {
+  text-align: center;
+  color: var(--text-muted);
+  margin: var(--space-lg) 0;
+  font-size: 14px;
+  position: relative;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background-color: var(--border);
+}
+
+.divider::before {
+  left: 0;
+}
+
+.divider::after {
+  right: 0;
+}
+
+.signup-prompt {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.signup-prompt a {
+  color: #6baaff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.signup-prompt a:hover {
+  text-decoration: underline;
+}

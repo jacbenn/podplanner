@@ -1,0 +1,160 @@
+.dashboard {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  margin-bottom: var(--space-xl);
+}
+
+.dashboard-header h1 {
+  margin-bottom: var(--space-sm);
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-xl);
+  background-color: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
+
+.empty-state p {
+  margin: var(--space-md) 0;
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.episodes-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.episodes-list h2 {
+  margin-bottom: var(--space-md);
+}
+
+.episode-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.episode-item:hover {
+  border-color: var(--text-secondary);
+}
+
+.episode-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 80px;
+  text-align: center;
+}
+
+.episode-date time {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.episode-date .time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.episode-info {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  flex: 1;
+}
+
+.podcast-indicator {
+  width: 4px;
+  height: 60px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.episode-info h3 {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: 18px;
+}
+
+.podcast-name {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.episode-status {
+  display: flex;
+  align-items: center;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-planning {
+  background-color: rgba(144, 144, 168, 0.2);
+  color: var(--status-planning);
+}
+
+.status-recorded {
+  background-color: rgba(107, 170, 255, 0.2);
+  color: var(--status-recorded);
+}
+
+.status-published {
+  background-color: rgba(107, 255, 184, 0.2);
+  color: var(--status-published);
+}
+
+.status-aired {
+  background-color: rgba(255, 107, 157, 0.2);
+  color: var(--status-aired);
+}
+
+@media (max-width: 768px) {
+  .episode-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+
+  .episode-date {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .episode-info {
+    width: 100%;
+  }
+
+  .podcast-indicator {
+    height: 4px;
+    width: 20px;
+  }
+}
