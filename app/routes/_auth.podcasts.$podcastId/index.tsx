@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData, Link, Outlet, Form, useFetcher } from "@remix-run/react";
+import { useLoaderData, Link, Form, useFetcher } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
 import type { Podcast, Episode, Book } from "~/types/models";
 import DeleteConfirmation from "~/components/DeleteConfirmation";
+import BookSearch from "~/components/BookSearch";
 import styles from "./podcast.css";
 import modalStyles from "~/components/DeleteConfirmation/styles.css";
 import type { LinksFunction } from "@remix-run/node";
@@ -66,10 +67,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Failed to load podcast data", { status: 500 });
   }
 
+  // Attach book data to episodes
+  const booksMap = new Map(books?.map((b) => [b.id, b]) || []);
+  const episodesWithBooks = (episodes || []).map((ep) => ({
+    ...ep,
+    book: ep.book_id ? booksMap.get(ep.book_id) : null,
+  }));
+
   return json(
     {
       podcast: podcast as Podcast,
-      episodes: (episodes || []) as Episode[],
+      episodes: episodesWithBooks as any[],
       books: (books || []) as Book[],
     },
     { headers }
@@ -106,8 +114,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PodcastPage() {
-  const { podcast, episodes, books } = useLoaderData<typeof loader>();
+  const { podcast, episodes: initialEpisodes, books } = useLoaderData<typeof loader>();
   const deleteFetcher = useFetcher();
+  const episodeFetcher = useFetcher();
+  const [episodes, setEpisodes] = useState(initialEpisodes);
+  const [editingEpisodeId, setEditingEpisodeId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
     type: "episode" | "book" | null;
@@ -120,7 +131,7 @@ export default function PodcastPage() {
     title: "",
   });
 
-  // Reload page when deletion completes
+  // Reload page when book deletion completes
   useEffect(() => {
     if (deleteFetcher.state === "idle" && deleteFetcher.data?.success) {
       // Reload to refresh the episode/book list
@@ -178,55 +189,38 @@ export default function PodcastPage() {
         <section className="episodes-section">
           <div className="section-header">
             <h2>Episodes</h2>
-            <Link to="episodes/new" className="btn btn-primary">
-              New Episode
-            </Link>
           </div>
           {episodes.length === 0 ? (
             <p className="empty-state">No episodes yet</p>
           ) : (
             <div className="episodes-list">
               {episodes.map((episode) => (
-                <div key={episode.id} className="episode-card-wrapper">
-                  <Link
-                    to={`episodes/${episode.id}`}
-                    className="episode-card"
-                  >
-                    <div className="episode-header">
-                      {episode.episode_number && (
-                        <span className="episode-num">#{episode.episode_number}</span>
-                      )}
-                      <h3>{episode.title}</h3>
-                    </div>
-                    {episode.filming_date && (
-                      <p className="filming-date">
-                        📅 {new Date(episode.filming_date).toLocaleDateString()}
-                        {episode.filming_time && ` at ${episode.filming_time}`}
-                      </p>
-                    )}
-                    <span className={`status-badge status-${episode.status}`}>
-                      {episode.status}
-                    </span>
-                  </Link>
-                  <div className="delete-form">
-                    <button
-                      type="button"
-                      className="btn-delete"
-                      title="Delete episode"
-                      onClick={(e) =>
-                        handleDeleteClick(
-                          e,
-                          "episode",
-                          episode.id,
-                          episode.title
-                        )
-                      }
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
+                <EpisodeCard
+                  key={episode.id}
+                  episode={episode}
+                  podcast={podcast}
+                  onEditClick={() => setEditingEpisodeId(episode.id)}
+                  onDeleteClick={(e) =>
+                    handleDeleteClick(e, "episode", episode.id, episode.title)
+                  }
+                />
               ))}
+              {editingEpisodeId && (
+                <EpisodeEditModal
+                  episodeId={editingEpisodeId}
+                  episode={episodes.find((e) => e.id === editingEpisodeId)!}
+                  podcast={podcast}
+                  episodeFetcher={episodeFetcher}
+                  onClose={() => setEditingEpisodeId(null)}
+                  onDeleteClick={() => {
+                    const ep = episodes.find((e) => e.id === editingEpisodeId);
+                    if (ep) {
+                      handleDeleteClick(new MouseEvent("click") as any, "episode", ep.id, ep.title);
+                    }
+                    setEditingEpisodeId(null);
+                  }}
+                />
+              )}
             </div>
           )}
         </section>
@@ -282,8 +276,258 @@ export default function PodcastPage() {
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
       />
+    </div>
+  );
+}
 
-      <Outlet />
+interface EpisodeCardProps {
+  episode: Episode & { book?: Book | null };
+  podcast: Podcast;
+  onEditClick: () => void;
+  onDeleteClick: (e: React.MouseEvent) => void;
+}
+
+function EpisodeCard({
+  episode,
+  onEditClick,
+  onDeleteClick,
+}: EpisodeCardProps) {
+  return (
+    <div className="episode-card-wrapper">
+      <button
+        type="button"
+        className="episode-card"
+        onClick={onEditClick}
+      >
+        <div className="episode-header">
+          {episode.episode_number && (
+            <span className="episode-num">#{episode.episode_number}</span>
+          )}
+          <h3>{episode.title}</h3>
+        </div>
+        {episode.filming_date && (
+          <p className="filming-date">
+            📅 {new Date(episode.filming_date).toLocaleDateString()}
+            {episode.filming_time && ` at ${episode.filming_time}`}
+          </p>
+        )}
+        <span className={`status-badge status-${episode.status}`}>
+          {episode.status}
+        </span>
+      </button>
+
+      <div className="delete-form">
+        <button
+          type="button"
+          className="btn-delete"
+          title="Delete episode"
+          onClick={onDeleteClick}
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface EpisodeEditModalProps {
+  episodeId: string;
+  episode: Episode & { book?: Book | null };
+  podcast: Podcast;
+  episodeFetcher: ReturnType<typeof useFetcher>;
+  onClose: () => void;
+  onDeleteClick: () => void;
+}
+
+function EpisodeEditModal({
+  episodeId,
+  episode,
+  podcast,
+  episodeFetcher,
+  onClose,
+  onDeleteClick,
+}: EpisodeEditModalProps) {
+  const Form = episodeFetcher.Form;
+  const [formData, setFormData] = useState({
+    title: episode.title,
+    episode_number: episode.episode_number || "",
+    status: episode.status,
+    filming_date: episode.filming_date || "",
+    filming_time: episode.filming_time || "",
+    notes: episode.notes || "",
+    book_title: episode.book?.title || "",
+    book_author: episode.book?.author || "",
+    book_cover_url: episode.book?.cover_url || "",
+  });
+
+  const handleBookSelect = (book: {
+    title: string;
+    author: string;
+    cover_url: string | null;
+  }) => {
+    setFormData({
+      ...formData,
+      book_title: book.title,
+      book_author: book.author,
+      book_cover_url: book.cover_url || "",
+    });
+  };
+
+  // Close on successful submission
+  useEffect(() => {
+    if (episodeFetcher.state === "idle" && episodeFetcher.data?.success !== false) {
+      if (episodeFetcher.data && Object.keys(episodeFetcher.data).length > 0) {
+        onClose();
+      }
+    }
+  }, [episodeFetcher.state, episodeFetcher.data, onClose]);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{episode.title}</h2>
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <Form
+          method="post"
+          action={`/podcasts/${podcast.id}/episodes/${episodeId}`}
+          className="episode-edit-form"
+        >
+          <div className="form-group">
+            <label htmlFor="title">Title *</label>
+            <input
+              id="title"
+              name="title"
+              type="text"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              required
+            />
+          </div>
+
+          <div className="episode-edit-fields">
+            <div className="form-group">
+              <label htmlFor="episode_number">Episode Number</label>
+              <input
+                id="episode_number"
+                name="episode_number"
+                type="number"
+                value={formData.episode_number}
+                onChange={(e) =>
+                  setFormData({ ...formData, episode_number: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="status">Status</label>
+              <select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value as any })
+                }
+              >
+                <option value="planning">Planning</option>
+                <option value="recorded">Recorded</option>
+                <option value="published">Published</option>
+                <option value="aired">Aired</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="episode-edit-fields">
+            <div className="form-group">
+              <label htmlFor="filming_date">Filming Date</label>
+              <input
+                id="filming_date"
+                name="filming_date"
+                type="date"
+                value={formData.filming_date}
+                onChange={(e) =>
+                  setFormData({ ...formData, filming_date: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="filming_time">Filming Time</label>
+              <input
+                id="filming_time"
+                name="filming_time"
+                type="time"
+                value={formData.filming_time}
+                onChange={(e) =>
+                  setFormData({ ...formData, filming_time: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Book (optional)</label>
+            <BookSearch onSelect={handleBookSelect} />
+            {formData.book_title && (
+              <p style={{ marginTop: "0.5rem", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+                Current: <strong>{formData.book_title}</strong> by{" "}
+                {formData.book_author}
+              </p>
+            )}
+          </div>
+
+          <input type="hidden" name="book_title" value={formData.book_title} />
+          <input type="hidden" name="book_author" value={formData.book_author} />
+          <input
+            type="hidden"
+            name="book_cover_url"
+            value={formData.book_cover_url}
+          />
+
+          <div className="form-group">
+            <label htmlFor="notes">Notes</label>
+            <textarea
+              id="notes"
+              name="notes"
+              rows={4}
+              value={formData.notes}
+              onChange={(e) =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="episode-edit-actions">
+            <button type="submit" className="btn btn-primary">
+              Save Episode
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={(e) => {
+                e.preventDefault();
+                onDeleteClick();
+              }}
+            >
+              Delete Episode
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
+          </div>
+        </Form>
+      </div>
     </div>
   );
 }

@@ -79,7 +79,14 @@ export default function Dashboard() {
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h1>Episode Timeline</h1>
+        <div className="header-top">
+          <h1>Episode Timeline</h1>
+          {podcasts.length > 0 && (
+            <Link to={`/podcasts/${podcasts[0].id}/episodes/new`} className="btn btn-primary">
+              New Episode
+            </Link>
+          )}
+        </div>
         <p className="subtitle">You're logged in as {userEmail}</p>
       </div>
 
