@@ -4,12 +4,6 @@ import { useLoaderData, Form, useActionData } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
 import type { Episode } from "~/types/models";
-import styles from "./episode-form.css";
-import type { LinksFunction } from "@remix-run/node";
-
-export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: styles },
-];
 
 export async function loader({
   request,

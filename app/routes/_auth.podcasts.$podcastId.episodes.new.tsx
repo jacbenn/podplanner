@@ -3,12 +3,6 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData, Form, useActionData } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
-import styles from "./$podcastId/episode-form.css";
-import type { LinksFunction } from "@remix-run/node";
-
-export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: styles },
-];
 
 export async function loader({
   request,
