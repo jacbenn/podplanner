@@ -110,6 +110,7 @@ export default function Dashboard() {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
+                        weekday: "short",
                       })
                     : "No date"}
                   {episode.filming_time && (
