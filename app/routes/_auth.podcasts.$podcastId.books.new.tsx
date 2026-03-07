@@ -98,35 +98,10 @@ export default function NewBookPage() {
         <div className="form-group">
           <label>Search for a book</label>
           <BookSearch onSelect={handleBookSelect} />
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "var(--space-xs)" }}>
-            Or fill in the details manually below
-          </p>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="title">Title *</label>
-          <input
-            id="title"
-            name="title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="author">Author *</label>
-          <input
-            id="author"
-            name="author"
-            type="text"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            required
-          />
-        </div>
-
+        <input type="hidden" name="title" value={title} />
+        <input type="hidden" name="author" value={author} />
         <input type="hidden" name="cover_url" value={coverUrl} />
 
         <div className="form-group">
@@ -148,7 +123,7 @@ export default function NewBookPage() {
         )}
 
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={!title || !author}>
             Create Book
           </button>
         </div>

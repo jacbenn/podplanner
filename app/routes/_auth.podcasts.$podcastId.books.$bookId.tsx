@@ -123,41 +123,19 @@ export default function BookDetailPage() {
     <div className="book-form">
       <div className="form-header">
         <h2>Edit Book</h2>
+        <div className="book-current-info">
+          <p><strong>{book.title}</strong> by {book.author}</p>
+        </div>
       </div>
 
       <Form method="post" className="form">
         <div className="form-group">
-          <label>Update book details</label>
+          <label>Search to update book details</label>
           <BookSearch onSelect={handleBookSelect} />
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "var(--space-xs)" }}>
-            Or update the details manually below
-          </p>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="title">Title *</label>
-          <input
-            id="title"
-            name="title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="author">Author *</label>
-          <input
-            id="author"
-            name="author"
-            type="text"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            required
-          />
-        </div>
-
+        <input type="hidden" name="title" value={title} />
+        <input type="hidden" name="author" value={author} />
         <input type="hidden" name="cover_url" value={coverUrl} />
 
         <div className="form-group">
