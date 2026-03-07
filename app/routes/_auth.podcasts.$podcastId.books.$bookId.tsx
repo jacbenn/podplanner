@@ -1,8 +1,9 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData, Form, useActionData } from "@remix-run/react";
+import { useLoaderData, Form, useActionData, useState } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
+import BookSearch from "~/components/BookSearch";
 import type { Book } from "~/types/models";
 
 export async function loader({
@@ -73,6 +74,7 @@ export async function action({
   const author = String(formData.get("author"));
   const status = String(formData.get("status")) as any;
   const bookNotes = formData.get("book_notes") || null;
+  const coverUrl = formData.get("cover_url") || null;
 
   if (!title || !author) {
     return json(
@@ -88,6 +90,7 @@ export async function action({
       author,
       status,
       book_notes: bookNotes,
+      cover_url: coverUrl,
     })
     .eq("id", bookId)
     .eq("podcast_id", podcastId);
@@ -102,6 +105,19 @@ export async function action({
 export default function BookDetailPage() {
   const { book } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const [title, setTitle] = useState(book.title);
+  const [author, setAuthor] = useState(book.author);
+  const [coverUrl, setCoverUrl] = useState(book.cover_url || "");
+
+  const handleBookSelect = (selectedBook: {
+    title: string;
+    author: string;
+    cover_url: string | null;
+  }) => {
+    setTitle(selectedBook.title);
+    setAuthor(selectedBook.author);
+    setCoverUrl(selectedBook.cover_url || "");
+  };
 
   return (
     <div className="book-form">
@@ -111,12 +127,21 @@ export default function BookDetailPage() {
 
       <Form method="post" className="form">
         <div className="form-group">
+          <label>Update book details</label>
+          <BookSearch onSelect={handleBookSelect} />
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "var(--space-xs)" }}>
+            Or update the details manually below
+          </p>
+        </div>
+
+        <div className="form-group">
           <label htmlFor="title">Title *</label>
           <input
             id="title"
             name="title"
             type="text"
-            defaultValue={book.title}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             required
           />
         </div>
@@ -127,10 +152,13 @@ export default function BookDetailPage() {
             id="author"
             name="author"
             type="text"
-            defaultValue={book.author}
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
             required
           />
         </div>
+
+        <input type="hidden" name="cover_url" value={coverUrl} />
 
         <div className="form-group">
           <label htmlFor="status">Status</label>

@@ -1,8 +1,9 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData } from "@remix-run/react";
+import { Form, useActionData, useState } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
+import BookSearch from "~/components/BookSearch";
 
 export async function loader({
   request,
@@ -46,6 +47,7 @@ export async function action({
   const author = String(formData.get("author"));
   const status = String(formData.get("status")) || "upcoming";
   const bookNotes = formData.get("book_notes") || null;
+  const coverUrl = formData.get("cover_url") || null;
 
   if (!title || !author) {
     return json(
@@ -60,6 +62,7 @@ export async function action({
     author,
     status,
     book_notes: bookNotes,
+    cover_url: coverUrl,
   });
 
   if (error) {
@@ -71,6 +74,19 @@ export async function action({
 
 export default function NewBookPage() {
   const actionData = useActionData<typeof action>();
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
+
+  const handleBookSelect = (book: {
+    title: string;
+    author: string;
+    cover_url: string | null;
+  }) => {
+    setTitle(book.title);
+    setAuthor(book.author);
+    setCoverUrl(book.cover_url || "");
+  };
 
   return (
     <div className="book-form">
@@ -80,14 +96,38 @@ export default function NewBookPage() {
 
       <Form method="post" className="form">
         <div className="form-group">
+          <label>Search for a book</label>
+          <BookSearch onSelect={handleBookSelect} />
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "var(--space-xs)" }}>
+            Or fill in the details manually below
+          </p>
+        </div>
+
+        <div className="form-group">
           <label htmlFor="title">Title *</label>
-          <input id="title" name="title" type="text" required />
+          <input
+            id="title"
+            name="title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
         </div>
 
         <div className="form-group">
           <label htmlFor="author">Author *</label>
-          <input id="author" name="author" type="text" required />
+          <input
+            id="author"
+            name="author"
+            type="text"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            required
+          />
         </div>
+
+        <input type="hidden" name="cover_url" value={coverUrl} />
 
         <div className="form-group">
           <label htmlFor="status">Status</label>

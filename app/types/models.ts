@@ -28,6 +28,7 @@ export interface Book {
   author: string;
   status: "upcoming" | "reading" | "finished";
   book_notes: string | null;
+  cover_url: string | null;
   created_at: string;
 }
 
