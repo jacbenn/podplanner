@@ -199,3 +199,38 @@
   margin: 0 0 var(--space-sm) 0;
   font-size: 0.95rem;
 }
+
+/* Delete buttons */
+.episode-card-wrapper,
+.book-card-wrapper {
+  position: relative;
+}
+
+.delete-form {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+}
+
+.btn-delete {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: rgba(255, 107, 157, 0.9);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.btn-delete:hover {
+  background: rgba(255, 107, 157, 1);
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.4);
+}

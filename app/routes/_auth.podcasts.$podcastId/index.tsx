@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
-import { useLoaderData, Link, Outlet } from "@remix-run/react";
+import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { useLoaderData, Link, Outlet, Form } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
 import type { Podcast, Episode, Book } from "~/types/models";
@@ -72,6 +72,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 }
 
+export async function action({ request, params }: ActionFunctionArgs) {
+  const { supabase, headers, user } = await requireUser(request);
+  const { podcastId } = params;
+
+  if (request.method !== "DELETE") {
+    return json({ error: "Method not allowed" }, { status: 405 });
+  }
+
+  const formData = await request.formData();
+  const type = formData.get("type"); // "episode" or "book"
+  const id = formData.get("id");
+
+  if (!type || !id) {
+    return json({ error: "Missing type or id" }, { status: 400 });
+  }
+
+  const { error } = await supabase
+    .from(type === "episode" ? "episodes" : "books")
+    .delete()
+    .eq("id", id)
+    .eq("podcast_id", podcastId);
+
+  if (error) {
+    return json({ error: error.message }, { status: 500, headers });
+  }
+
+  return redirect(`/podcasts/${podcastId}`, { headers });
+}
+
 export default function PodcastPage() {
   const { podcast, episodes, books } = useLoaderData<typeof loader>();
 
@@ -100,27 +129,44 @@ export default function PodcastPage() {
           ) : (
             <div className="episodes-list">
               {episodes.map((episode) => (
-                <Link
-                  key={episode.id}
-                  to={`episodes/${episode.id}`}
-                  className="episode-card"
-                >
-                  <div className="episode-header">
-                    {episode.episode_number && (
-                      <span className="episode-num">#{episode.episode_number}</span>
+                <div key={episode.id} className="episode-card-wrapper">
+                  <Link
+                    to={`episodes/${episode.id}`}
+                    className="episode-card"
+                  >
+                    <div className="episode-header">
+                      {episode.episode_number && (
+                        <span className="episode-num">#{episode.episode_number}</span>
+                      )}
+                      <h3>{episode.title}</h3>
+                    </div>
+                    {episode.filming_date && (
+                      <p className="filming-date">
+                        📅 {new Date(episode.filming_date).toLocaleDateString()}
+                        {episode.filming_time && ` at ${episode.filming_time}`}
+                      </p>
                     )}
-                    <h3>{episode.title}</h3>
-                  </div>
-                  {episode.filming_date && (
-                    <p className="filming-date">
-                      📅 {new Date(episode.filming_date).toLocaleDateString()}
-                      {episode.filming_time && ` at ${episode.filming_time}`}
-                    </p>
-                  )}
-                  <span className={`status-badge status-${episode.status}`}>
-                    {episode.status}
-                  </span>
-                </Link>
+                    <span className={`status-badge status-${episode.status}`}>
+                      {episode.status}
+                    </span>
+                  </Link>
+                  <Form method="post" className="delete-form">
+                    <input type="hidden" name="type" value="episode" />
+                    <input type="hidden" name="id" value={episode.id} />
+                    <button
+                      type="submit"
+                      className="btn-delete"
+                      onClick={(e) => {
+                        if (!confirm("Delete this episode?")) {
+                          e.preventDefault();
+                        }
+                      }}
+                      title="Delete episode"
+                    >
+                      ✕
+                    </button>
+                  </Form>
+                </div>
               ))}
             </div>
           )}
@@ -138,17 +184,34 @@ export default function PodcastPage() {
           ) : (
             <div className="books-list">
               {books.map((book) => (
-                <Link
-                  key={book.id}
-                  to={`books/${book.id}`}
-                  className="book-card"
-                >
-                  <h3>{book.title}</h3>
-                  <p className="author">{book.author}</p>
-                  <span className={`status-badge status-${book.status}`}>
-                    {book.status}
-                  </span>
-                </Link>
+                <div key={book.id} className="book-card-wrapper">
+                  <Link
+                    to={`books/${book.id}`}
+                    className="book-card"
+                  >
+                    <h3>{book.title}</h3>
+                    <p className="author">{book.author}</p>
+                    <span className={`status-badge status-${book.status}`}>
+                      {book.status}
+                    </span>
+                  </Link>
+                  <Form method="post" className="delete-form">
+                    <input type="hidden" name="type" value="book" />
+                    <input type="hidden" name="id" value={book.id} />
+                    <button
+                      type="submit"
+                      className="btn-delete"
+                      onClick={(e) => {
+                        if (!confirm("Delete this book?")) {
+                          e.preventDefault();
+                        }
+                      }}
+                      title="Delete book"
+                    >
+                      ✕
+                    </button>
+                  </Form>
+                </div>
               ))}
             </div>
           )}
