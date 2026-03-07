@@ -1,9 +1,11 @@
+import { useState } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, Form, useActionData } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
-import type { Episode } from "~/types/models";
+import BookSearch from "~/components/BookSearch";
+import type { Episode, Book } from "~/types/models";
 
 export async function loader({
   request,
@@ -40,15 +42,19 @@ export async function loader({
     throw new Response("Episode not found", { status: 404 });
   }
 
-  // Fetch books for this podcast
-  const { data: books } = await supabase
-    .from("books")
-    .select("*")
-    .eq("podcast_id", podcastId)
-    .order("created_at", { ascending: false });
+  // Fetch current book if assigned
+  let currentBook: Book | null = null;
+  if (episode.book_id) {
+    const { data: book } = await supabase
+      .from("books")
+      .select("*")
+      .eq("id", episode.book_id)
+      .single();
+    currentBook = book;
+  }
 
   return json(
-    { episode: episode as Episode, books: books || [] },
+    { episode: episode as Episode, currentBook },
     { headers }
   );
 }
@@ -86,11 +92,36 @@ export async function action({
   const filmingDate = formData.get("filming_date") || null;
   const filmingTime = formData.get("filming_time") || null;
   const status = String(formData.get("status")) as any;
-  const bookId = formData.get("book_id") || null;
   const notes = formData.get("notes") || null;
+  const bookTitle = formData.get("book_title") || null;
+  const bookAuthor = formData.get("book_author") || null;
+  const bookCoverUrl = formData.get("book_cover_url") || null;
 
   if (!title) {
     return json({ error: "Title is required" }, { status: 400, headers });
+  }
+
+  let bookId = null;
+
+  // Create new book if one was selected from search
+  if (bookTitle && bookAuthor) {
+    const { data: newBook, error: bookError } = await supabase
+      .from("books")
+      .insert({
+        podcast_id: podcastId,
+        title: bookTitle,
+        author: bookAuthor,
+        cover_url: bookCoverUrl,
+        status: "upcoming",
+      })
+      .select("id")
+      .single();
+
+    if (bookError) {
+      return json({ error: bookError.message }, { status: 500, headers });
+    }
+
+    bookId = newBook?.id;
   }
 
   const { error } = await supabase
@@ -115,8 +146,21 @@ export async function action({
 }
 
 export default function EpisodeDetailPage() {
-  const { episode, books } = useLoaderData<typeof loader>();
+  const { episode, currentBook } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const [bookTitle, setBookTitle] = useState(currentBook?.title || "");
+  const [bookAuthor, setBookAuthor] = useState(currentBook?.author || "");
+  const [bookCoverUrl, setBookCoverUrl] = useState(currentBook?.cover_url || "");
+
+  const handleBookSelect = (book: {
+    title: string;
+    author: string;
+    cover_url: string | null;
+  }) => {
+    setBookTitle(book.title);
+    setBookAuthor(book.author);
+    setBookCoverUrl(book.cover_url || "");
+  };
 
   return (
     <div className="episode-form">
@@ -185,20 +229,14 @@ export default function EpisodeDetailPage() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="book_id">Book (optional)</label>
-          <select
-            id="book_id"
-            name="book_id"
-            defaultValue={episode.book_id || ""}
-          >
-            <option value="">None</option>
-            {books.map((book) => (
-              <option key={book.id} value={book.id}>
-                {book.title} by {book.author}
-              </option>
-            ))}
-          </select>
+          <label>Book (optional)</label>
+          <BookSearch onSelect={handleBookSelect} />
+          {currentBook && <p style={{ marginTop: "0.5rem", fontSize: "0.9rem", color: "var(--text-secondary)" }}>Current: <strong>{currentBook.title}</strong> by {currentBook.author}</p>}
         </div>
+
+        <input type="hidden" name="book_title" value={bookTitle} />
+        <input type="hidden" name="book_author" value={bookAuthor} />
+        <input type="hidden" name="book_cover_url" value={bookCoverUrl} />
 
         <div className="form-group">
           <label htmlFor="notes">Notes</label>
