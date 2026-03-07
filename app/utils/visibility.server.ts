@@ -5,13 +5,29 @@ export async function getVisiblePodcasts(
   supabase: SupabaseClient,
   userId: string
 ): Promise<Podcast[]> {
-  // Get all podcasts the user has access to with their details
-  const { data: accessRows } = await supabase
+  // Get podcast IDs the user has access to
+  const { data: accessRows, error: accessError } = await supabase
     .from("podcast_access")
-    .select("podcast_id, podcasts(*)")
+    .select("podcast_id")
     .eq("user_id", userId);
 
+  console.log("Access rows:", accessRows, "Error:", accessError);
+
   if (!accessRows || accessRows.length === 0) {
+    return [];
+  }
+
+  const podcastIds = accessRows.map((row) => row.podcast_id);
+
+  // Get the podcast details
+  const { data: podcasts, error: podcastError } = await supabase
+    .from("podcasts")
+    .select("*")
+    .in("id", podcastIds);
+
+  console.log("Podcasts:", podcasts, "Error:", podcastError);
+
+  if (!podcasts) {
     return [];
   }
 
@@ -23,9 +39,9 @@ export async function getVisiblePodcasts(
 
   const prefMap = new Map(prefs?.map((p) => [p.podcast_id, p.is_visible]) ?? []);
 
-  return (accessRows as any[]).map((row) => ({
-    ...(row.podcasts as Podcast),
-    is_visible: prefMap.get(row.podcast_id) ?? true,
+  return (podcasts as Podcast[]).map((podcast) => ({
+    ...podcast,
+    is_visible: prefMap.get(podcast.id) ?? true,
   }));
 }
 

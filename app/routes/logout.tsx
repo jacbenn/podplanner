@@ -7,8 +7,10 @@ export async function action({ request }: ActionFunctionArgs) {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  const headers = await logout(request);
-  return redirect("/login", { headers });
+  const setCookie = await logout(request);
+  return redirect("/login", {
+    headers: { "Set-Cookie": setCookie },
+  });
 }
 
 // No default export - action-only route
