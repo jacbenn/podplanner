@@ -1,18 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData, Form, useActionData, useFetcher, useNavigate, useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { createSupabaseServerClient } from "~/lib/supabase.server";
-import BookSearch from "~/components/BookSearch";
-import DeleteConfirmation from "~/components/DeleteConfirmation";
-import modalStyles from "~/components/DeleteConfirmation/styles.css";
 import type { Episode, Book } from "~/types/models";
-import type { LinksFunction } from "@remix-run/node";
-
-export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: modalStyles },
-];
 
 export async function loader({
   request,
@@ -100,35 +92,10 @@ export async function action({
   const filmingTime = formData.get("filming_time") || null;
   const status = String(formData.get("status")) as any;
   const notes = formData.get("notes") || null;
-  const bookTitle = formData.get("book_title") || null;
-  const bookAuthor = formData.get("book_author") || null;
-  const bookCoverUrl = formData.get("book_cover_url") || null;
+  const bookId = formData.get("book_id") || null;
 
   if (!title) {
     return json({ error: "Title is required" }, { status: 400, headers });
-  }
-
-  let bookId = null;
-
-  // Create new book if one was selected from search
-  if (bookTitle && bookAuthor) {
-    const { data: newBook, error: bookError } = await supabase
-      .from("books")
-      .insert({
-        podcast_id: podcastId,
-        title: bookTitle,
-        author: bookAuthor,
-        cover_url: bookCoverUrl,
-        status: "upcoming",
-      })
-      .select("id")
-      .single();
-
-    if (bookError) {
-      return json({ error: bookError.message }, { status: 500, headers });
-    }
-
-    bookId = newBook?.id;
   }
 
   const { error } = await supabase
@@ -153,148 +120,13 @@ export async function action({
 }
 
 export default function EpisodeDetailPage() {
-  const { episode, currentBook } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
   const { podcastId } = useParams();
   const navigate = useNavigate();
-  const deleteFetcher = useFetcher();
-  const [bookTitle, setBookTitle] = useState(currentBook?.title || "");
-  const [bookAuthor, setBookAuthor] = useState(currentBook?.author || "");
-  const [bookCoverUrl, setBookCoverUrl] = useState(currentBook?.cover_url || "");
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  // Handle deletion response
+  // Redirect to podcast page since editing now happens inline
   useEffect(() => {
-    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
-      // Deletion completed, navigate back to podcast page
-      navigate(`/podcasts/${podcastId}`);
-    }
-  }, [deleteFetcher.state, deleteFetcher.data, navigate, podcastId]);
+    navigate(`/podcasts/${podcastId}`);
+  }, [podcastId, navigate]);
 
-  const handleBookSelect = (book: {
-    title: string;
-    author: string;
-    cover_url: string | null;
-  }) => {
-    setBookTitle(book.title);
-    setBookAuthor(book.author);
-    setBookCoverUrl(book.cover_url || "");
-  };
-
-  return (
-    <div className="episode-form">
-      <div className="form-header">
-        <h2>Edit Episode</h2>
-      </div>
-
-      <Form method="post" className="form" id="episode-form">
-        <div className="form-group">
-          <label htmlFor="title">Title *</label>
-          <input
-            id="title"
-            name="title"
-            type="text"
-            defaultValue={episode.title}
-            required
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="episode_number">Episode Number</label>
-            <input
-              id="episode_number"
-              name="episode_number"
-              type="number"
-              defaultValue={episode.episode_number || ""}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="status">Status</label>
-            <select
-              id="status"
-              name="status"
-              defaultValue={episode.status}
-            >
-              <option value="planning">Planning</option>
-              <option value="recorded">Recorded</option>
-              <option value="published">Published</option>
-              <option value="aired">Aired</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="filming_date">Filming Date</label>
-            <input
-              id="filming_date"
-              name="filming_date"
-              type="date"
-              defaultValue={episode.filming_date || ""}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="filming_time">Filming Time</label>
-            <input
-              id="filming_time"
-              name="filming_time"
-              type="time"
-              defaultValue={episode.filming_time || ""}
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label>Book (optional)</label>
-          <BookSearch onSelect={handleBookSelect} />
-          {currentBook && <p style={{ marginTop: "0.5rem", fontSize: "0.9rem", color: "var(--text-secondary)" }}>Current: <strong>{currentBook.title}</strong> by {currentBook.author}</p>}
-        </div>
-
-        <input type="hidden" name="book_title" value={bookTitle} />
-        <input type="hidden" name="book_author" value={bookAuthor} />
-        <input type="hidden" name="book_cover_url" value={bookCoverUrl} />
-
-        <div className="form-group">
-          <label htmlFor="notes">Notes</label>
-          <textarea
-            id="notes"
-            name="notes"
-            rows={5}
-            defaultValue={episode.notes || ""}
-          />
-        </div>
-
-        {actionData?.error && (
-          <div className="error-message">{actionData.error}</div>
-        )}
-
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Save Episode
-          </button>
-          <button
-            type="button"
-            className="btn btn-danger"
-            onClick={() => setDeleteConfirm(true)}
-          >
-            Delete Episode
-          </button>
-        </div>
-      </Form>
-
-      <DeleteConfirmation
-        open={deleteConfirm}
-        title="Delete Episode"
-        message={`Are you sure you want to delete the episode "${episode.title}"? This cannot be undone.`}
-        onConfirm={() => {
-          deleteFetcher.submit({}, { method: "delete" });
-          setDeleteConfirm(false);
-        }}
-        onCancel={() => setDeleteConfirm(false)}
-      />
-    </div>
-  );
+  return null;
 }

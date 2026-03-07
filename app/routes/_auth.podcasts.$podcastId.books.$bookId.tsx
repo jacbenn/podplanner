@@ -10,6 +10,11 @@ import modalStyles from "~/components/DeleteConfirmation/styles.css";
 import type { Book } from "~/types/models";
 import type { LinksFunction } from "@remix-run/node";
 
+interface ActionData {
+  error?: string;
+  success?: boolean;
+}
+
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: modalStyles },
 ];
@@ -112,7 +117,7 @@ export async function action({
 
 export default function BookDetailPage() {
   const { book } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const actionData = useActionData<ActionData>();
   const { podcastId } = useParams();
   const navigate = useNavigate();
   const deleteFetcher = useFetcher();

@@ -79,7 +79,14 @@ export default function Dashboard() {
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h1>Episode Timeline</h1>
+        <div className="header-top">
+          <h1>Episode Timeline</h1>
+          {podcasts.length > 0 && (
+            <Link to={`/podcasts/${podcasts[0].id}/episodes/new`} className="btn btn-primary">
+              New Episode
+            </Link>
+          )}
+        </div>
         <p className="subtitle">You're logged in as {userEmail}</p>
       </div>
 
@@ -119,42 +126,54 @@ export default function Dashboard() {
                 </div>
 
                 <div className="timeline-content">
-                  <div className="episode-header">
-                    <h3>
-                      <Link to={`/podcasts/${episode.podcast_id}/episodes/${episode.id}`}>
-                        {episode.title}
-                      </Link>
-                    </h3>
-                    <span className="podcast-tag">{episode.podcast.name}</span>
+                  <div className="timeline-main">
+                    <div className="episode-header">
+                      <h3>
+                        <Link to={`/podcasts/${episode.podcast_id}/episodes/${episode.id}`}>
+                          {episode.title}
+                        </Link>
+                      </h3>
+                      <span className="podcast-tag">{episode.podcast.name}</span>
+                    </div>
+
+                    {episode.episode_number && (
+                      <p className="episode-number">
+                        Episode #{episode.episode_number}
+                      </p>
+                    )}
+
+                    {episode.book && (
+                      <div className="book-info">
+                        <strong>📖 Book:</strong>{" "}
+                        <Link to={`/podcasts/${episode.podcast_id}/books/${episode.book.id}`}>
+                          {episode.book.title}
+                        </Link>{" "}
+                        by {episode.book.author}
+                        <span className={`book-status status-${episode.book.status}`}>
+                          {episode.book.status}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="episode-footer">
+                      <span className={`status-badge status-${episode.status}`}>
+                        {episode.status}
+                      </span>
+                      {episode.notes && (
+                        <p className="episode-notes">{episode.notes}</p>
+                      )}
+                    </div>
                   </div>
 
-                  {episode.episode_number && (
-                    <p className="episode-number">
-                      Episode #{episode.episode_number}
-                    </p>
-                  )}
-
-                  {episode.book && (
-                    <div className="book-info">
-                      <strong>📖 Book:</strong>{" "}
-                      <Link to={`/podcasts/${episode.podcast_id}/books/${episode.book.id}`}>
-                        {episode.book.title}
-                      </Link>{" "}
-                      by {episode.book.author}
-                      <span className={`book-status status-${episode.book.status}`}>
-                        {episode.book.status}
-                      </span>
+                  {episode.book && episode.book.cover_url && (
+                    <div className="timeline-book-cover">
+                      <img
+                        src={episode.book.cover_url}
+                        alt={episode.book.title}
+                        title={episode.book.title}
+                      />
                     </div>
                   )}
-
-                  <div className="episode-footer">
-                    <span className={`status-badge status-${episode.status}`}>
-                      {episode.status}
-                    </span>
-                    {episode.notes && (
-                      <p className="episode-notes">{episode.notes}</p>
-                    )}
-                  </div>
                 </div>
               </div>
             ))}
