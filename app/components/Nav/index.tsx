@@ -23,6 +23,9 @@ export default function Nav({ user }: NavProps) {
           <Link to="/" className="nav-link">
             Dashboard
           </Link>
+          <Link to="/calendar" className="nav-link">
+            Calendar
+          </Link>
           <Link to="/settings" className="nav-link">
             Settings
           </Link>
