@@ -69,11 +69,18 @@ export async function loader({
     currentBook = book;
   }
 
-  const { data: books } = await supabase
-    .from("books")
-    .select("*")
-    .eq("podcast_id", podcastId)
-    .order("created_at", { ascending: false });
+  // Only fetch books assigned to this episode
+  let books: Book[] = [];
+  if (episode.book_id) {
+    const { data: episodeBook } = await supabase
+      .from("books")
+      .select("*")
+      .eq("id", episode.book_id)
+      .single();
+    if (episodeBook) {
+      books = [episodeBook];
+    }
+  }
 
   return json(
     {
