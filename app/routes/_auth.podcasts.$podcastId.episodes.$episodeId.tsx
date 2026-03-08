@@ -69,17 +69,20 @@ export async function loader({
     currentBook = book;
   }
 
-  // Only fetch books assigned to this episode
+  // Fetch all books assigned to this episode via the junction table
   let books: Book[] = [];
-  if (episode.book_id) {
-    const { data: episodeBook } = await supabase
+  const { data: episodeBookLinks } = await supabase
+    .from("episode_books")
+    .select("book_id")
+    .eq("episode_id", episodeId);
+
+  if (episodeBookLinks && episodeBookLinks.length > 0) {
+    const bookIds = episodeBookLinks.map((link) => link.book_id);
+    const { data: episodeBooks } = await supabase
       .from("books")
       .select("*")
-      .eq("id", episode.book_id)
-      .single();
-    if (episodeBook) {
-      books = [episodeBook];
-    }
+      .in("id", bookIds);
+    books = episodeBooks || [];
   }
 
   return json(

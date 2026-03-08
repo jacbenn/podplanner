@@ -75,9 +75,18 @@ export async function action({
     return json({ error: bookError.message }, { status: 500, headers });
   }
 
-  // If episode_id is provided, assign the book to that episode (only if no book is already assigned)
+  // If episode_id is provided, link the book to the episode
   if (episodeId && bookData) {
-    // Check if episode already has a book assigned
+    // Insert into episode_books junction table
+    const { error: linkError } = await supabase
+      .from("episode_books")
+      .insert({ episode_id: episodeId, book_id: bookData.id });
+
+    if (linkError && !linkError.message.includes("duplicate")) {
+      return json({ error: linkError.message }, { status: 500, headers });
+    }
+
+    // If this is the first book for the episode, also set episode.book_id
     const { data: existingEpisode } = await supabase
       .from("episodes")
       .select("book_id")
@@ -85,7 +94,6 @@ export async function action({
       .eq("podcast_id", podcastId)
       .single();
 
-    // Only assign if no book is currently assigned
     if (!existingEpisode?.book_id) {
       const { error: updateError } = await supabase
         .from("episodes")
