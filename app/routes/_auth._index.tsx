@@ -5,6 +5,7 @@ import { useLoaderData, Link } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import { getVisiblePodcasts } from "~/utils/visibility.server";
 import type { Podcast, Episode, Book } from "~/types/models";
+import EpisodeTile from "~/components/EpisodeTile";
 import styles from "./_auth._index.css";
 
 export const links: LinksFunction = () => [
@@ -125,75 +126,12 @@ export default function Dashboard() {
         <section className="timeline-section">
           <div className="timeline">
             {episodes.map((episode) => (
-              <div
+              <EpisodeTile
                 key={episode.id}
-                className="timeline-item"
-                style={{
-                  "--podcast-accent": episode.podcast.accent_color,
-                } as any}
-              >
-                <div className="timeline-date">
-                  {episode.filming_date
-                    ? new Date(episode.filming_date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                        weekday: "short",
-                      })
-                    : "No date"}
-                  {episode.filming_time && (
-                    <div className="timeline-time">{episode.filming_time}</div>
-                  )}
-                </div>
-
-                <div className="timeline-content">
-                  <div className="timeline-main">
-                    <div className="episode-header">
-                      <h3>
-                        <Link to={`/podcasts/${episode.podcast_id}/episodes/${episode.id}`}>
-                          {episode.title}
-                        </Link>
-                      </h3>
-                      <span className="podcast-tag">{episode.podcast.name}</span>
-                    </div>
-
-                    {episode.episode_number && (
-                      <p className="episode-number">
-                        Episode #{episode.episode_number}
-                      </p>
-                    )}
-
-                    {episode.book && (
-                      <div className="book-info">
-                        <strong>📖 Book:</strong>{" "}
-                        <Link to={`/podcasts/${episode.podcast_id}/books/${episode.book.id}`}>
-                          {episode.book.title}
-                        </Link>{" "}
-                        by {episode.book.author}
-                      </div>
-                    )}
-
-                    <div className="episode-footer">
-                      <span className={`status-badge status-${episode.status}`}>
-                        {episode.status}
-                      </span>
-                      {episode.notes && (
-                        <p className="episode-notes">{episode.notes}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {episode.book && episode.book.cover_url && (
-                    <div className="timeline-book-cover">
-                      <img
-                        src={episode.book.cover_url}
-                        alt={episode.book.title}
-                        title={episode.book.title}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
+                episode={episode}
+                podcast={episode.podcast}
+                currentBook={episode.book}
+              />
             ))}
           </div>
         </section>
