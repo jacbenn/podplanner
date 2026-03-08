@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, Link, Form, useFetcher } from "@remix-run/react";
@@ -121,6 +121,7 @@ export default function PodcastPage() {
   const bookFetcher = useFetcher();
   const [episodes, setEpisodes] = useState(initialEpisodes);
   const [editingEpisodeId, setEditingEpisodeId] = useState<string | null>(null);
+  const wasSubmittingBook = useRef(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
     type: "episode" | "book" | null;
@@ -143,10 +144,14 @@ export default function PodcastPage() {
 
   // Reload page when book creation completes
   useEffect(() => {
-    if (bookFetcher.state === "idle" && bookFetcher.data) {
+    if (bookFetcher.state === "submitting") {
+      wasSubmittingBook.current = true;
+    }
+    if (bookFetcher.state === "idle" && wasSubmittingBook.current) {
+      wasSubmittingBook.current = false;
       window.location.reload();
     }
-  }, [bookFetcher.state, bookFetcher.data]);
+  }, [bookFetcher.state]);
 
   const handleDeleteClick = (
     e: React.MouseEvent,
@@ -206,34 +211,27 @@ export default function PodcastPage() {
           <div className="section-header">
             <h2>Episode</h2>
           </div>
-          {episodes.length === 0 ? (
-            <p className="empty-state">No episodes yet</p>
-          ) : (
+          {episodes.length > 0 && (
             <div className="episodes-list">
-              {episodes.map((episode) => (
-                <EpisodeCard
-                  key={episode.id}
-                  episode={episode}
-                  podcast={podcast}
-                  onEditClick={() => setEditingEpisodeId(episode.id)}
-                  onDeleteClick={(e) =>
-                    handleDeleteClick(e, "episode", episode.id, episode.title)
-                  }
-                />
-              ))}
+              <EpisodeCard
+                key={episodes[0].id}
+                episode={episodes[0]}
+                podcast={podcast}
+                onEditClick={() => setEditingEpisodeId(episodes[0].id)}
+                onDeleteClick={(e) =>
+                  handleDeleteClick(e, "episode", episodes[0].id, episodes[0].title)
+                }
+              />
               {editingEpisodeId && (
                 <EpisodeEditModal
                   episodeId={editingEpisodeId}
-                  episode={episodes.find((e) => e.id === editingEpisodeId)!}
+                  episode={episodes[0]}
                   podcast={podcast}
                   books={books}
                   episodeFetcher={episodeFetcher}
                   onClose={() => setEditingEpisodeId(null)}
                   onDeleteClick={() => {
-                    const ep = episodes.find((e) => e.id === editingEpisodeId);
-                    if (ep) {
-                      handleDeleteClick(new MouseEvent("click") as any, "episode", ep.id, ep.title);
-                    }
+                    handleDeleteClick(new MouseEvent("click") as any, "episode", episodes[0].id, episodes[0].title);
                     setEditingEpisodeId(null);
                   }}
                 />
@@ -255,6 +253,10 @@ export default function PodcastPage() {
                 formData.append("author", book.author);
                 formData.append("cover_url", book.cover_url || "");
                 formData.append("status", "upcoming");
+                // Assign to the single episode
+                if (episodes.length > 0) {
+                  formData.append("episode_id", episodes[0].id);
+                }
 
                 bookFetcher.submit(formData, {
                   method: "POST",
@@ -406,7 +408,6 @@ function EpisodeEditModal({
     filming_date: episode.filming_date || "",
     filming_time: episode.filming_time || "",
     notes: episode.notes || "",
-    book_id: episode.book?.id || "",
   });
 
   // Close on successful submission
@@ -510,25 +511,6 @@ function EpisodeEditModal({
                 }
               />
             </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="book_id">Book (optional)</label>
-            <select
-              id="book_id"
-              name="book_id"
-              value={formData.book_id}
-              onChange={(e) =>
-                setFormData({ ...formData, book_id: e.target.value })
-              }
-            >
-              <option value="">Select a book</option>
-              {books.map((book) => (
-                <option key={book.id} value={book.id}>
-                  {book.title} by {book.author}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div className="form-group">

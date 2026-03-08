@@ -89,32 +89,45 @@ export async function action({
   }
 
   const formData = await request.formData();
-  const title = String(formData.get("title"));
+  const title = formData.get("title");
   const episodeNumber = formData.get("episode_number")
     ? Number(formData.get("episode_number"))
     : null;
   const filmingDate = formData.get("filming_date") || null;
   const filmingTime = formData.get("filming_time") || null;
-  const status = String(formData.get("status")) as any;
+  const status = formData.get("status") || null;
   const notes = formData.get("notes") || null;
   const bookId = formData.get("book_id") || null;
 
-  if (!title) {
-    return json({ error: "Title is required" }, { status: 400, headers });
+  // Fetch current episode to check if book_id is already set
+  const { data: currentEpisode } = await supabase
+    .from("episodes")
+    .select("book_id")
+    .eq("id", episodeId)
+    .eq("podcast_id", podcastId)
+    .single();
+
+  // Build update object with only provided fields
+  const updateData: Record<string, any> = {};
+  if (title) updateData.title = title;
+  if (episodeNumber !== null) updateData.episode_number = episodeNumber;
+  if (filmingDate) updateData.filming_date = filmingDate;
+  if (filmingTime) updateData.filming_time = filmingTime;
+  if (status) updateData.status = status;
+  if (notes) updateData.notes = notes;
+  // Only set book_id if it's not already set (preserve first book selected)
+  if (bookId !== null && !currentEpisode?.book_id) {
+    updateData.book_id = bookId;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return json({ error: "No fields to update" }, { status: 400, headers });
   }
 
   // Update existing episode
   const { error } = await supabase
     .from("episodes")
-    .update({
-      title,
-      episode_number: episodeNumber,
-      filming_date: filmingDate,
-      filming_time: filmingTime,
-      status,
-      book_id: bookId,
-      notes,
-    })
+    .update(updateData)
     .eq("id", episodeId)
     .eq("podcast_id", podcastId);
 
