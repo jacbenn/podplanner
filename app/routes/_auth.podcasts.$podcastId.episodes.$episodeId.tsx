@@ -424,6 +424,8 @@ export default function EpisodeDetailPage() {
                 />
               </div>
 
+              <input type="hidden" name="book_id" value={episode.book_id || ""} />
+
               <div className="episode-edit-actions">
                 <button type="submit" className="btn btn-primary">
                   Save Episode
