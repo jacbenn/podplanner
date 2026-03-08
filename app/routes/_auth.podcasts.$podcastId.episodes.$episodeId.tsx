@@ -1,10 +1,17 @@
-import { useEffect } from "react";
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { useNavigate, useParams } from "@remix-run/react";
+import { useEffect, useRef } from "react";
+import type { LoaderFunctionArgs, ActionFunctionArgs, LinksFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { useLoaderData, useFetcher, Link } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
-import { createSupabaseServerClient } from "~/lib/supabase.server";
-import type { Episode, Book } from "~/types/models";
+import type { Episode, Book, Podcast } from "~/types/models";
+import BookSearch, { links as bookSearchLinks } from "~/components/BookSearch";
+import styles from "./podcast.css";
+import type { LinksFunction as RemixLinksFunction } from "@remix-run/node";
+
+export const links: RemixLinksFunction = () => [
+  { rel: "stylesheet", href: styles },
+  ...bookSearchLinks(),
+];
 
 export async function loader({
   request,
@@ -17,12 +24,10 @@ export async function loader({
     throw new Response("Missing parameters", { status: 400 });
   }
 
-  // Reject "new" as an episode ID - it should use the .new route
   if (episodeId === "new") {
     throw new Response("Invalid episode ID", { status: 400 });
   }
 
-  // Check access
   const { data: accessCheck } = await supabase
     .from("podcast_access")
     .select("*")
@@ -34,7 +39,12 @@ export async function loader({
     throw new Response("Access denied", { status: 403 });
   }
 
-  // Fetch existing episode
+  const { data: podcast } = await supabase
+    .from("podcasts")
+    .select("*")
+    .eq("id", podcastId)
+    .single();
+
   const { data: episode, error: episodeError } = await supabase
     .from("episodes")
     .select("*")
@@ -46,7 +56,6 @@ export async function loader({
     throw new Response("Episode not found", { status: 404 });
   }
 
-  // Fetch current book if assigned
   let currentBook: Book | null = null;
   if (episode.book_id) {
     const { data: book } = await supabase
@@ -57,8 +66,19 @@ export async function loader({
     currentBook = book;
   }
 
+  const { data: books } = await supabase
+    .from("books")
+    .select("*")
+    .eq("podcast_id", podcastId)
+    .order("created_at", { ascending: false });
+
   return json(
-    { episode: episode as Episode, currentBook, isNew: false },
+    {
+      episode: episode as Episode,
+      currentBook,
+      podcast: podcast as Podcast,
+      books: (books || []) as Book[],
+    },
     { headers }
   );
 }
@@ -68,71 +88,188 @@ export async function action({
   params,
 }: ActionFunctionArgs) {
   const { supabase, headers, user } = await requireUser(request);
-  const { podcastId, episodeId } = params;
+  const { podcastId } = params;
 
-  if (request.method === "DELETE") {
-    const { error } = await supabase
-      .from("episodes")
-      .delete()
-      .eq("id", episodeId)
-      .eq("podcast_id", podcastId);
-
-    if (error) {
-      return json({ error: error.message }, { status: 500, headers });
-    }
-
-    return json({ success: true }, { headers });
-  }
-
-  if (request.method !== "POST") {
+  if (request.method !== "DELETE") {
     return json({ error: "Method not allowed" }, { status: 405 });
   }
 
   const formData = await request.formData();
-  const title = String(formData.get("title"));
-  const episodeNumber = formData.get("episode_number")
-    ? Number(formData.get("episode_number"))
-    : null;
-  const filmingDate = formData.get("filming_date") || null;
-  const filmingTime = formData.get("filming_time") || null;
-  const status = String(formData.get("status")) as any;
-  const notes = formData.get("notes") || null;
-  const bookId = formData.get("book_id") || null;
+  const type = formData.get("type");
+  const id = formData.get("id");
 
-  if (!title) {
-    return json({ error: "Title is required" }, { status: 400, headers });
+  if (!type || !id) {
+    return json({ error: "Missing type or id" }, { status: 400 });
   }
 
-  // Update existing episode
   const { error } = await supabase
-    .from("episodes")
-    .update({
-      title,
-      episode_number: episodeNumber,
-      filming_date: filmingDate,
-      filming_time: filmingTime,
-      status,
-      book_id: bookId,
-      notes,
-    })
-    .eq("id", episodeId)
+    .from(type === "episode" ? "episodes" : "books")
+    .delete()
+    .eq("id", id)
     .eq("podcast_id", podcastId);
 
   if (error) {
     return json({ error: error.message }, { status: 500, headers });
   }
 
-  return redirect(`/podcasts/${podcastId}`, { headers });
+  return json({ success: true }, { headers });
 }
 
 export default function EpisodeDetailPage() {
-  const { podcastId } = useParams();
-  const navigate = useNavigate();
-
-  // Redirect to podcast page - editing happens inline on the podcast detail page
+  const { episode, currentBook, podcast, books } = useLoaderData<typeof loader>();
+  const deleteFetcher = useFetcher();
+  const bookFetcher = useFetcher();
+  const wasSubmittingBook = useRef(false);
   useEffect(() => {
-    navigate(`/podcasts/${podcastId}`);
-  }, [podcastId, navigate]);
+    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
+      window.location.reload();
+    }
+  }, [deleteFetcher.state, deleteFetcher.data]);
 
-  return null;
+  useEffect(() => {
+    if (bookFetcher.state === "submitting") {
+      wasSubmittingBook.current = true;
+    }
+    if (bookFetcher.state === "idle" && wasSubmittingBook.current) {
+      wasSubmittingBook.current = false;
+      window.location.reload();
+    }
+  }, [bookFetcher.state]);
+
+  const handleDelete = (type: "episode" | "book", id: string) => {
+    deleteFetcher.submit(
+      { type, id },
+      { method: "delete" }
+    );
+  };
+
+  return (
+    <div
+      className="podcast-page"
+      style={{ "--podcast-accent": podcast.accent_color } as any}
+    >
+      <div className="podcast-header">
+        <h1>{podcast.name}</h1>
+        {podcast.description && (
+          <p className="description">{podcast.description}</p>
+        )}
+      </div>
+
+      <div className="podcast-content">
+        <section className="episodes-section">
+          <div className="section-header">
+            <h2>Episode</h2>
+          </div>
+          {episode && (
+            <div className="episodes-list">
+              <div className="episode-card-wrapper">
+                <div className="episode-card">
+                  <div className="episode-main">
+                    <div>
+                      <div className="episode-header">
+                        {episode.episode_number && (
+                          <span className="episode-num">#{episode.episode_number}</span>
+                        )}
+                        <h3>{episode.title}</h3>
+                      </div>
+                      {episode.filming_date && (
+                        <p className="filming-date">
+                          📅 {new Date(episode.filming_date).toLocaleDateString()}
+                          {episode.filming_time && ` at ${episode.filming_time}`}
+                        </p>
+                      )}
+                      <span className={`status-badge status-${episode.status}`}>
+                        {episode.status}
+                      </span>
+                    </div>
+                    {currentBook && currentBook.cover_url && (
+                      <div className="episode-book-cover">
+                        <img
+                          src={currentBook.cover_url}
+                          alt={currentBook.title}
+                          title={currentBook.title}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="delete-form">
+                  <button
+                    type="button"
+                    className="btn-delete"
+                    title="Delete episode"
+                    onClick={() => handleDelete("episode", episode.id)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="books-section">
+          <div className="section-header">
+            <h2>Books</h2>
+          </div>
+
+          <div className="add-book-section">
+            <BookSearch
+              onSelect={(book) => {
+                const formData = new FormData();
+                formData.append("title", book.title);
+                formData.append("author", book.author);
+                formData.append("cover_url", book.cover_url || "");
+                formData.append("status", "upcoming");
+                formData.append("episode_id", episode.id);
+
+                bookFetcher.submit(formData, {
+                  method: "POST",
+                  action: `/podcasts/${podcast.id}/books/new`,
+                });
+              }}
+            />
+          </div>
+
+          {books.length === 0 ? (
+            <p className="empty-state">No books yet</p>
+          ) : (
+            <div className="books-list">
+              {books.map((book) => (
+                <div key={book.id} className="book-card-wrapper">
+                  <Link
+                    to={`/podcasts/${episode.podcast_id}/books/${book.id}`}
+                    className="book-card"
+                  >
+                    {book.cover_url && (
+                      <img
+                        src={book.cover_url}
+                        alt={book.title}
+                        className="book-cover-img"
+                      />
+                    )}
+                    <div className="book-info">
+                      <h3>{book.title}</h3>
+                      <p className="author">{book.author}</p>
+                    </div>
+                  </Link>
+                  <div className="delete-form">
+                    <button
+                      type="button"
+                      className="btn-delete"
+                      title="Delete book"
+                      onClick={() => handleDelete("book", book.id)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
 }

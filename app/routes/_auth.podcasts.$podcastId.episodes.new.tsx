@@ -67,7 +67,7 @@ export async function action({
     return json({ error: "Title is required" }, { status: 400, headers });
   }
 
-  const { error } = await supabase
+  const { data: episodeData, error } = await supabase
     .from("episodes")
     .insert({
       podcast_id: podcastId,
@@ -77,13 +77,15 @@ export async function action({
       filming_time: filmingTime,
       status,
       notes,
-    });
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return json({ error: error.message }, { status: 500, headers });
   }
 
-  return redirect(`/podcasts/${podcastId}`, { headers });
+  return redirect(`/podcasts/${podcastId}/episodes/${episodeData.id}`, { headers });
 }
 
 export default function NewEpisodePage() {

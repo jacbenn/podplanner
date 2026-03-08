@@ -49,6 +49,7 @@ export async function action({
   const status = String(formData.get("status")) || "upcoming";
   const bookNotes = formData.get("book_notes") || null;
   const coverUrl = formData.get("cover_url") || null;
+  const episodeId = formData.get("episode_id") || null;
 
   if (!title || !author) {
     return json(
@@ -57,20 +58,48 @@ export async function action({
     );
   }
 
-  const { error } = await supabase.from("books").insert({
-    podcast_id: podcastId,
-    title,
-    author,
-    status,
-    book_notes: bookNotes,
-    cover_url: coverUrl,
-  });
+  const { data: bookData, error: bookError } = await supabase
+    .from("books")
+    .insert({
+      podcast_id: podcastId,
+      title,
+      author,
+      status,
+      book_notes: bookNotes,
+      cover_url: coverUrl,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    return json({ error: error.message }, { status: 500, headers });
+  if (bookError) {
+    return json({ error: bookError.message }, { status: 500, headers });
   }
 
-  return redirect(`/podcasts/${podcastId}`, { headers });
+  // If episode_id is provided, assign the book to that episode (only if no book is already assigned)
+  if (episodeId && bookData) {
+    // Check if episode already has a book assigned
+    const { data: existingEpisode } = await supabase
+      .from("episodes")
+      .select("book_id")
+      .eq("id", episodeId)
+      .eq("podcast_id", podcastId)
+      .single();
+
+    // Only assign if no book is currently assigned
+    if (!existingEpisode?.book_id) {
+      const { error: updateError } = await supabase
+        .from("episodes")
+        .update({ book_id: bookData.id })
+        .eq("id", episodeId)
+        .eq("podcast_id", podcastId);
+
+      if (updateError) {
+        return json({ error: updateError.message }, { status: 500, headers });
+      }
+    }
+  }
+
+  return redirect(`/podcasts/${podcastId}/episodes/${episodeId}`, { headers });
 }
 
 export default function NewBookPage() {

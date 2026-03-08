@@ -34,7 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .from("episodes")
     .select("*")
     .in("podcast_id", podcastIds)
-    .order("filming_date", { ascending: false });
+    .order("filming_date", { ascending: true });
 
   // Fetch books for all episodes that have a book_id
   const bookIds = (episodes || [])
@@ -170,9 +170,6 @@ export default function Dashboard() {
                           {episode.book.title}
                         </Link>{" "}
                         by {episode.book.author}
-                        <span className={`book-status status-${episode.book.status}`}>
-                          {episode.book.status}
-                        </span>
                       </div>
                     )}
 
