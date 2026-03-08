@@ -99,7 +99,7 @@ export async function action({
     }
   }
 
-  return redirect(`/podcasts/${podcastId}`, { headers });
+  return redirect(`/podcasts/${podcastId}/episodes/${episodeId}`, { headers });
 }
 
 export default function NewBookPage() {
