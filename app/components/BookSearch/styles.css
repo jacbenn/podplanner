@@ -29,8 +29,8 @@
 }
 
 .book-search-input:focus {
-  border-color: #FF6B9D;
-  box-shadow: 0 0 20px rgba(255, 107, 157, 0.3);
+  border-color: var(--podcast-accent, #9d4edd);
+  box-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
 }
 
 .book-search-input:disabled {
@@ -47,7 +47,7 @@
   right: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #FF6B9D;
+  color: var(--podcast-accent, #9d4edd);
   font-size: 1rem;
 }
 
@@ -63,12 +63,12 @@
   left: 0;
   right: 0;
   background: var(--bg-secondary);
-  border: 1px solid #FF6B9D;
+  border: 1px solid var(--podcast-accent, #9d4edd);
   border-radius: 6px;
   max-height: 400px;
   overflow-y: auto;
   z-index: 100;
-  box-shadow: 0 10px 30px rgba(255, 107, 157, 0.2);
+  box-shadow: 0 10px 30px rgba(157, 78, 221, 0.2);
   animation: dropdownAppear 0.2s ease;
 }
 
@@ -101,7 +101,7 @@
 }
 
 .book-search-result:hover {
-  background: rgba(255, 107, 157, 0.1);
+  background: rgba(157, 78, 221, 0.1);
   transform: translateX(4px);
 }
 
@@ -148,7 +148,7 @@
 
 .book-search-add-btn {
   padding: 1rem 2rem;
-  background: #FF6B9D;
+  background: var(--podcast-accent, #9d4edd);
   border: none;
   border-radius: 8px;
   color: white;
@@ -164,7 +164,7 @@
 
 .book-search-add-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(255, 107, 157, 0.5);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
 }
 
 .book-search-add-btn:disabled {

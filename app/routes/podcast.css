@@ -1,6 +1,6 @@
 .podcast-page {
   padding: var(--space-lg);
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -23,7 +23,8 @@
 }
 
 .podcast-content {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-xl);
 }
 
@@ -74,8 +75,9 @@
 
 /* Episodes */
 .episodes-list {
-  display: grid;
-  gap: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
 }
 
 .episode-card {
@@ -271,7 +273,8 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  background: rgba(255, 107, 157, 0.9);
+  background: var(--podcast-accent, #9d4edd);
+  opacity: 0.8;
   border: none;
   border-radius: 50%;
   color: white;
@@ -285,9 +288,9 @@
 }
 
 .btn-delete:hover {
-  background: rgba(255, 107, 157, 1);
+  opacity: 1;
   transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Modal styles */
@@ -426,4 +429,42 @@
   border-color: var(--podcast-accent, #9d4edd);
   box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.15);
   background-color: var(--bg-secondary);
+}
+
+/* Confirm Delete Modal */
+.modal-content h2 {
+  margin: 0 0 var(--space-md) 0;
+  color: var(--text-primary);
+}
+
+.modal-content p {
+  margin: 0 0 var(--space-lg) 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: flex-end;
+  padding: var(--space-lg);
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+.btn-danger {
+  background: var(--podcast-accent, #9d4edd);
+  color: white;
+}
+
+.btn-danger:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }

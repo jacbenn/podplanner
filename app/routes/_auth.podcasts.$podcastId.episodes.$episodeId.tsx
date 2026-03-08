@@ -1,15 +1,18 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs, LinksFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useFetcher, Link } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import type { Episode, Book, Podcast } from "~/types/models";
 import BookSearch, { links as bookSearchLinks } from "~/components/BookSearch";
+import EpisodeTile from "~/components/EpisodeTile";
 import styles from "./podcast.css";
+import timelineStyles from "./_auth._index.css";
 import type { LinksFunction as RemixLinksFunction } from "@remix-run/node";
 
 export const links: RemixLinksFunction = () => [
   { rel: "stylesheet", href: styles },
+  { rel: "stylesheet", href: timelineStyles },
   ...bookSearchLinks(),
 ];
 
@@ -112,6 +115,11 @@ export async function action({
     return json({ error: error.message }, { status: 500, headers });
   }
 
+  // Redirect to episode timeline after deleting
+  if (type === "episode") {
+    return redirect("/", { headers });
+  }
+
   return json({ success: true }, { headers });
 }
 
@@ -120,27 +128,34 @@ export default function EpisodeDetailPage() {
   const deleteFetcher = useFetcher();
   const bookFetcher = useFetcher();
   const wasSubmittingBook = useRef(false);
-  useEffect(() => {
-    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
-      window.location.reload();
-    }
-  }, [deleteFetcher.state, deleteFetcher.data]);
+  const [deleteModal, setDeleteModal] = useState<{ type: "episode" | "book"; id: string } | null>(null);
 
   useEffect(() => {
     if (bookFetcher.state === "submitting") {
       wasSubmittingBook.current = true;
     }
-    if (bookFetcher.state === "idle" && wasSubmittingBook.current) {
+    if (bookFetcher.state === "idle" && wasSubmittingBook.current && bookFetcher.data) {
       wasSubmittingBook.current = false;
       window.location.reload();
     }
-  }, [bookFetcher.state]);
+  }, [bookFetcher.state, bookFetcher.data]);
 
   const handleDelete = (type: "episode" | "book", id: string) => {
-    deleteFetcher.submit(
-      { type, id },
-      { method: "delete" }
-    );
+    setDeleteModal({ type, id });
+  };
+
+  const confirmDelete = () => {
+    if (deleteModal) {
+      deleteFetcher.submit(
+        { type: deleteModal.type, id: deleteModal.id },
+        { method: "delete" }
+      );
+      setDeleteModal(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModal(null);
   };
 
   return (
@@ -155,58 +170,43 @@ export default function EpisodeDetailPage() {
         )}
       </div>
 
-      <div className="podcast-content">
-        <section className="episodes-section">
-          <div className="section-header">
-            <h2>Episode</h2>
-          </div>
-          {episode && (
-            <div className="episodes-list">
-              <div className="episode-card-wrapper">
-                <div className="episode-card">
-                  <div className="episode-main">
-                    <div>
-                      <div className="episode-header">
-                        {episode.episode_number && (
-                          <span className="episode-num">#{episode.episode_number}</span>
-                        )}
-                        <h3>{episode.title}</h3>
-                      </div>
-                      {episode.filming_date && (
-                        <p className="filming-date">
-                          📅 {new Date(episode.filming_date).toLocaleDateString()}
-                          {episode.filming_time && ` at ${episode.filming_time}`}
-                        </p>
-                      )}
-                      <span className={`status-badge status-${episode.status}`}>
-                        {episode.status}
-                      </span>
-                    </div>
-                    {currentBook && currentBook.cover_url && (
-                      <div className="episode-book-cover">
-                        <img
-                          src={currentBook.cover_url}
-                          alt={currentBook.title}
-                          title={currentBook.title}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="delete-form">
-                  <button
-                    type="button"
-                    className="btn-delete"
-                    title="Delete episode"
-                    onClick={() => handleDelete("episode", episode.id)}
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
+      {deleteModal && (
+        <div className="modal-overlay" onClick={cancelDelete}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Confirm Delete</h2>
+            <p>
+              Are you sure you want to delete this {deleteModal.type}? This action cannot be undone.
+            </p>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={cancelDelete}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={confirmDelete}
+                disabled={deleteFetcher.state === "submitting"}
+              >
+                {deleteFetcher.state === "submitting" ? "Deleting..." : "Delete"}
+              </button>
             </div>
-          )}
+          </div>
+        </div>
+      )}
+
+      <div className="podcast-content">
+        <section className="timeline-section">
+          <div className="timeline">
+            {episode && (
+              <EpisodeTile
+                episode={episode}
+                podcast={podcast}
+                currentBook={currentBook}
+                onDelete={() => handleDelete("episode", episode.id)}
+                showDeleteButton={true}
+              />
+            )}
+          </div>
         </section>
 
         <section className="books-section">
