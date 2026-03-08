@@ -1,0 +1,22 @@
+.episode-chip {
+  display: block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: color-mix(in srgb, var(--podcast-accent) 25%, transparent);
+  border-left: 3px solid var(--podcast-accent);
+  color: var(--text-primary);
+  text-decoration: none;
+  margin-bottom: 2px;
+  transition: background 0.15s ease;
+}
+
+.episode-chip:hover {
+  background: color-mix(in srgb, var(--podcast-accent) 40%, transparent);
+  text-decoration: underline;
+}
