@@ -69,11 +69,18 @@ export async function loader({
     currentBook = book;
   }
 
-  const { data: books } = await supabase
-    .from("books")
-    .select("*")
-    .eq("podcast_id", podcastId)
-    .order("created_at", { ascending: false });
+  // Only fetch books assigned to this episode
+  let books: Book[] = [];
+  if (episode.book_id) {
+    const { data: episodeBook } = await supabase
+      .from("books")
+      .select("*")
+      .eq("id", episode.book_id)
+      .single();
+    if (episodeBook) {
+      books = [episodeBook];
+    }
+  }
 
   return json(
     {
@@ -91,7 +98,44 @@ export async function action({
   params,
 }: ActionFunctionArgs) {
   const { supabase, headers, user } = await requireUser(request);
-  const { podcastId } = params;
+  const { podcastId, episodeId } = params;
+
+  if (request.method === "POST") {
+    const formData = await request.formData();
+    const title = String(formData.get("title"));
+    const episodeNumber = formData.get("episode_number")
+      ? Number(formData.get("episode_number"))
+      : null;
+    const filmingDate = formData.get("filming_date") || null;
+    const filmingTime = formData.get("filming_time") || null;
+    const status = String(formData.get("status")) as any;
+    const notes = formData.get("notes") || null;
+    const bookId = formData.get("book_id") || null;
+
+    if (!title) {
+      return json({ error: "Title is required" }, { status: 400, headers });
+    }
+
+    const { error } = await supabase
+      .from("episodes")
+      .update({
+        title,
+        episode_number: episodeNumber,
+        filming_date: filmingDate,
+        filming_time: filmingTime,
+        status,
+        book_id: bookId,
+        notes,
+      })
+      .eq("id", episodeId)
+      .eq("podcast_id", podcastId);
+
+    if (error) {
+      return json({ error: error.message }, { status: 500, headers });
+    }
+
+    return json({ success: true }, { headers });
+  }
 
   if (request.method !== "DELETE") {
     return json({ error: "Method not allowed" }, { status: 405 });
@@ -127,8 +171,10 @@ export default function EpisodeDetailPage() {
   const { episode, currentBook, podcast, books } = useLoaderData<typeof loader>();
   const deleteFetcher = useFetcher();
   const bookFetcher = useFetcher();
+  const editFetcher = useFetcher();
   const wasSubmittingBook = useRef(false);
   const [deleteModal, setDeleteModal] = useState<{ type: "episode" | "book"; id: string } | null>(null);
+  const [isEditingEpisode, setIsEditingEpisode] = useState(false);
 
   useEffect(() => {
     if (bookFetcher.state === "submitting") {
@@ -139,6 +185,13 @@ export default function EpisodeDetailPage() {
       window.location.reload();
     }
   }, [bookFetcher.state, bookFetcher.data]);
+
+  useEffect(() => {
+    if (editFetcher.state === "idle" && (editFetcher.data as any)?.success) {
+      setIsEditingEpisode(false);
+      window.location.reload();
+    }
+  }, [editFetcher.state, editFetcher.data]);
 
   const handleDelete = (type: "episode" | "book", id: string) => {
     setDeleteModal({ type, id });
@@ -203,6 +256,7 @@ export default function EpisodeDetailPage() {
                 podcast={podcast}
                 currentBook={currentBook}
                 onDelete={() => handleDelete("episode", episode.id)}
+                onEdit={() => setIsEditingEpisode(true)}
                 showDeleteButton={true}
               />
             )}
@@ -270,6 +324,109 @@ export default function EpisodeDetailPage() {
           )}
         </section>
       </div>
+
+      {isEditingEpisode && (
+        <div className="modal-overlay" onClick={() => setIsEditingEpisode(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{episode.title}</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setIsEditingEpisode(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {editFetcher.Form && (
+              <editFetcher.Form
+                method="post"
+                className="episode-edit-form"
+              >
+              <div className="form-group">
+                <label htmlFor="title">Title *</label>
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  defaultValue={episode.title}
+                  required
+                />
+              </div>
+
+              <div className="episode-edit-fields">
+                <div className="form-group">
+                  <label htmlFor="episode_number">Episode Number</label>
+                  <input
+                    id="episode_number"
+                    name="episode_number"
+                    type="number"
+                    defaultValue={episode.episode_number || ""}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="status">Status</label>
+                  <select
+                    id="status"
+                    name="status"
+                    defaultValue={episode.status}
+                  >
+                    <option value="planning">Planning</option>
+                    <option value="recorded">Recorded</option>
+                    <option value="published">Published</option>
+                    <option value="aired">Aired</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="episode-edit-fields">
+                <div className="form-group">
+                  <label htmlFor="filming_date">Filming Date</label>
+                  <input
+                    id="filming_date"
+                    name="filming_date"
+                    type="date"
+                    defaultValue={episode.filming_date || ""}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="filming_time">Filming Time</label>
+                  <input
+                    id="filming_time"
+                    name="filming_time"
+                    type="time"
+                    defaultValue={episode.filming_time || ""}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="notes">Notes</label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows={4}
+                  defaultValue={episode.notes || ""}
+                />
+              </div>
+
+              <div className="episode-edit-actions">
+                <button type="submit" className="btn btn-primary">
+                  Save Episode
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => setIsEditingEpisode(false)}>
+                  Cancel
+                </button>
+              </div>
+              </editFetcher.Form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

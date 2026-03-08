@@ -35,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .from("episodes")
     .select("*")
     .in("podcast_id", podcastIds)
-    .order("filming_date", { ascending: true });
+    .order("filming_date", { ascending: false });
 
   // Fetch books for all episodes that have a book_id
   const bookIds = (episodes || [])
@@ -59,21 +59,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     })
   );
 
-  // Filter to show only today and upcoming episodes
+  // Filter to show only past episodes (before today)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const upcomingEpisodes = allEpisodes.filter((episode) => {
-    if (!episode.filming_date) return true; // Show episodes without dates
+  const pastEpisodes = allEpisodes.filter((episode) => {
+    if (!episode.filming_date) return false; // Don't show episodes without dates
     const filmingDate = new Date(episode.filming_date);
     filmingDate.setHours(0, 0, 0, 0);
-    return filmingDate >= today;
+    return filmingDate < today;
   });
 
   return json(
     {
       userEmail: user.email,
       podcasts,
-      episodes: upcomingEpisodes,
+      episodes: pastEpisodes,
     },
     { headers }
   );
@@ -85,7 +85,7 @@ interface LoaderData {
   episodes: EpisodeWithDetails[];
 }
 
-export default function Dashboard() {
+export default function PastEpisodes() {
   const { userEmail, podcasts, episodes } = useLoaderData<LoaderData>();
   const [showPodcastDropdown, setShowPodcastDropdown] = useState(false);
 
@@ -93,49 +93,17 @@ export default function Dashboard() {
     <div className="dashboard">
       <div className="dashboard-header">
         <div className="header-top">
-          <h1>Episode Timeline</h1>
-          <div className="header-actions">
-            {podcasts.length > 0 && (
-              <div className="podcast-dropdown-container">
-                <button
-                  className="btn btn-primary"
-                  onClick={() => setShowPodcastDropdown(!showPodcastDropdown)}
-                >
-                  New Episode
-                </button>
-                {showPodcastDropdown && (
-                  <div className="podcast-dropdown-menu">
-                    {podcasts.map((podcast) => (
-                      <Link
-                        key={podcast.id}
-                        to={`/podcasts/${podcast.id}/episodes/new`}
-                        className="dropdown-item"
-                        onClick={() => setShowPodcastDropdown(false)}
-                      >
-                        <span className="podcast-name">{podcast.name}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            <Link to="/past-episodes" className="btn btn-secondary">
-              Past Episodes
-            </Link>
-          </div>
+          <h1>Past Episodes</h1>
+          <Link to="/" className="btn btn-secondary">
+            Back to Timeline
+          </Link>
         </div>
         <p className="subtitle">You're logged in as {userEmail}</p>
       </div>
 
       {episodes.length === 0 ? (
         <div className="empty-state">
-          <p>No episodes yet. Start adding episodes to your podcasts!</p>
-          {podcasts.length > 0 && (
-            <p>
-              Visit a podcast to{" "}
-              <Link to={`/podcasts/${podcasts[0].id}`}>create an episode</Link>
-            </p>
-          )}
+          <p>No past episodes yet.</p>
         </div>
       ) : (
         <section className="timeline-section">
