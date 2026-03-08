@@ -17,7 +17,10 @@ export const links: LinksFunction = () => [...calendarViewLinks()];
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user, headers, supabase } = await requireUser(request);
-  const podcasts = await getVisiblePodcasts(supabase, user.id);
+  const allPodcasts = await getVisiblePodcasts(supabase, user.id);
+
+  // Only include visible podcasts
+  const podcasts = allPodcasts.filter((p) => p.is_visible !== false);
 
   if (podcasts.length === 0) {
     return json(
