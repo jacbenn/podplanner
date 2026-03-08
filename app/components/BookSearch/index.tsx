@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { SearchResult } from "~/utils/bookSearch";
 import styles from "./styles.css";
 import type { LinksFunction } from "@remix-run/node";
@@ -20,6 +20,21 @@ export default function BookSearch({ onSelect }: BookSearchProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+        setQuery("");
+        setResults([]);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -58,7 +73,7 @@ export default function BookSearch({ onSelect }: BookSearchProps) {
   };
 
   return (
-    <div className="book-search">
+    <div className="book-search" ref={searchRef}>
       <div className="book-search-input-group">
         <div className="book-search-input-wrapper">
           <input
