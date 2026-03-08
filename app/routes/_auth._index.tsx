@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { LoaderFunctionArgs, LinksFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, Link } from "@remix-run/react";
@@ -75,6 +76,7 @@ interface LoaderData {
 
 export default function Dashboard() {
   const { userEmail, podcasts, episodes } = useLoaderData<LoaderData>();
+  const [showPodcastDropdown, setShowPodcastDropdown] = useState(false);
 
   return (
     <div className="dashboard">
@@ -82,9 +84,28 @@ export default function Dashboard() {
         <div className="header-top">
           <h1>Episode Timeline</h1>
           {podcasts.length > 0 && (
-            <Link to={`/podcasts/${podcasts[0].id}/episodes/new`} className="btn btn-primary">
-              New Episode
-            </Link>
+            <div className="podcast-dropdown-container">
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowPodcastDropdown(!showPodcastDropdown)}
+              >
+                New Episode
+              </button>
+              {showPodcastDropdown && (
+                <div className="podcast-dropdown-menu">
+                  {podcasts.map((podcast) => (
+                    <Link
+                      key={podcast.id}
+                      to={`/podcasts/${podcast.id}/episodes/new`}
+                      className="dropdown-item"
+                      onClick={() => setShowPodcastDropdown(false)}
+                    >
+                      <span className="podcast-name">{podcast.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
         <p className="subtitle">You're logged in as {userEmail}</p>

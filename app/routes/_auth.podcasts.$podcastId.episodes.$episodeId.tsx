@@ -17,6 +17,11 @@ export async function loader({
     throw new Response("Missing parameters", { status: 400 });
   }
 
+  // Reject "new" as an episode ID - it should use the .new route
+  if (episodeId === "new") {
+    throw new Response("Invalid episode ID", { status: 400 });
+  }
+
   // Check access
   const { data: accessCheck } = await supabase
     .from("podcast_access")
@@ -29,7 +34,7 @@ export async function loader({
     throw new Response("Access denied", { status: 403 });
   }
 
-  // Fetch episode
+  // Fetch existing episode
   const { data: episode, error: episodeError } = await supabase
     .from("episodes")
     .select("*")
@@ -53,7 +58,7 @@ export async function loader({
   }
 
   return json(
-    { episode: episode as Episode, currentBook },
+    { episode: episode as Episode, currentBook, isNew: false },
     { headers }
   );
 }
@@ -98,6 +103,7 @@ export async function action({
     return json({ error: "Title is required" }, { status: 400, headers });
   }
 
+  // Update existing episode
   const { error } = await supabase
     .from("episodes")
     .update({
@@ -123,7 +129,7 @@ export default function EpisodeDetailPage() {
   const { podcastId } = useParams();
   const navigate = useNavigate();
 
-  // Redirect to podcast page since editing now happens inline
+  // Redirect to podcast page - editing happens inline on the podcast detail page
   useEffect(() => {
     navigate(`/podcasts/${podcastId}`);
   }, [podcastId, navigate]);
