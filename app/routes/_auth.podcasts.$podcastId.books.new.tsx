@@ -51,9 +51,9 @@ export async function action({
   const coverUrl = formData.get("cover_url") || null;
   const episodeId = formData.get("episode_id") || null;
 
-  if (!title || !author) {
+  if (!title) {
     return json(
-      { error: "Title and author are required" },
+      { error: "Title is required" },
       { status: 400, headers }
     );
   }

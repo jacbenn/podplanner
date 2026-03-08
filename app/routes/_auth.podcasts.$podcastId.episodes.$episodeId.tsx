@@ -299,12 +299,19 @@ export default function EpisodeDetailPage() {
                     to={`/podcasts/${episode.podcast_id}/books/${book.id}`}
                     className="book-card"
                   >
-                    {book.cover_url && (
+                    {book.cover_url ? (
                       <img
                         src={book.cover_url}
                         alt={book.title}
                         className="book-cover-img"
                       />
+                    ) : (
+                      <div className="book-cover-placeholder">
+                        <div className="placeholder-content">
+                          <span className="book-icon">📖</span>
+                          <p className="placeholder-title">{book.title}</p>
+                        </div>
+                      </div>
                     )}
                     <div className="book-info">
                       <h3>{book.title}</h3>

@@ -125,10 +125,17 @@ export default function BookSearch({ onSelect }: BookSearchProps) {
           disabled={!query.trim()}
           onClick={() => {
             if (query.trim()) {
-              // Trigger search on button click if there are results
-              if (results.length > 0) {
-                handleSelect(results[0]);
-              }
+              // Manual entry - split by "by" or use whole query as title
+              const parts = query.split(/\s+by\s+/i);
+              const title = parts[0].trim();
+              const author = parts.length > 1 ? parts[1].trim() : "";
+              onSelect({
+                title,
+                author,
+                cover_url: null,
+              });
+              setQuery("");
+              setShowResults(false);
             }
           }}
         >
