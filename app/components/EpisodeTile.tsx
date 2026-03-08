@@ -6,6 +6,7 @@ interface EpisodeTileProps {
   podcast: Podcast;
   currentBook?: Book | null;
   onDelete?: (episodeId: string) => void;
+  onEdit?: () => void;
   showDeleteButton?: boolean;
 }
 
@@ -14,8 +15,28 @@ export default function EpisodeTile({
   podcast,
   currentBook,
   onDelete,
+  onEdit,
   showDeleteButton = false,
 }: EpisodeTileProps) {
+  // Use Link if no onEdit handler, button if onEdit is provided
+  const TileWrapper = onEdit ? "button" : Link;
+  const tileProps = onEdit
+    ? {
+        type: "button" as const,
+        onClick: onEdit,
+        style: {
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          width: "100%",
+          font: "inherit",
+          textAlign: "left" as const,
+          padding: 0,
+          margin: 0,
+        },
+      }
+    : { to: `/podcasts/${episode.podcast_id}/episodes/${episode.id}` };
+
   return (
     <div
       className="timeline-item episode-tile"
@@ -23,9 +44,9 @@ export default function EpisodeTile({
         "--podcast-accent": podcast.accent_color,
       } as any}
     >
-      <Link
-        to={`/podcasts/${episode.podcast_id}/episodes/${episode.id}`}
+      <TileWrapper
         className="episode-tile-link"
+        {...tileProps}
       >
         <div className="timeline-date">
           {episode.filming_date
@@ -55,7 +76,7 @@ export default function EpisodeTile({
             {currentBook && (
               <div className="book-info">
                 <strong>📖 Book:</strong>{" "}
-                <span onClick={(e) => e.preventDefault()}>
+                <span onClick={(e) => e.stopPropagation()}>
                   <Link to={`/podcasts/${episode.podcast_id}/books/${currentBook.id}`}>
                     {currentBook.title}
                   </Link>
@@ -74,7 +95,7 @@ export default function EpisodeTile({
             </div>
           </div>
         </div>
-      </Link>
+      </TileWrapper>
 
       {currentBook && currentBook.cover_url && (
         <div className="timeline-book-cover">
