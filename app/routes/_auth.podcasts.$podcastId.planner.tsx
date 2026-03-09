@@ -479,17 +479,6 @@ export default function PlannerPage() {
           />
         </div>
 
-        {/* Save Button */}
-        <div className="planner-save-section">
-          <button
-            className="btn btn-primary"
-            onClick={handleSave}
-            disabled={fetcher.state === "submitting"}
-          >
-            {fetcher.state === "submitting" ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-
         {/* Action Items Section */}
         <div className="planner-section">
           <h2>✅ Action Items</h2>
@@ -529,6 +518,17 @@ export default function PlannerPage() {
               {fetcher.state === "submitting" ? "..." : "Add"}
             </button>
           </form>
+        </div>
+
+        {/* Save Button */}
+        <div className="planner-save-section">
+          <button
+            className="btn btn-primary"
+            onClick={handleSave}
+            disabled={fetcher.state === "submitting"}
+          >
+            {fetcher.state === "submitting" ? "Saving..." : "Save Changes"}
+          </button>
         </div>
       </div>
     </div>
