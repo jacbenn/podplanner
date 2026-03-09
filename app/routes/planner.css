@@ -335,3 +335,31 @@
     opacity: 0.6;
   }
 }
+
+.planner-save-section {
+  margin-top: 20px;
+  margin-bottom: 40px;
+  display: flex;
+  gap: 12px;
+}
+
+.btn-primary {
+  background-color: var(--podcast-accent, #6baaff);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.8;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
