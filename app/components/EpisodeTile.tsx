@@ -18,25 +18,6 @@ export default function EpisodeTile({
   onEdit,
   showDeleteButton = false,
 }: EpisodeTileProps) {
-  // Use Link if no onEdit handler, button if onEdit is provided
-  const TileWrapper = onEdit ? "button" : Link;
-  const tileProps = onEdit
-    ? {
-        type: "button" as const,
-        onClick: onEdit,
-        style: {
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          width: "100%",
-          font: "inherit",
-          textAlign: "left" as const,
-          padding: 0,
-          margin: 0,
-        },
-      }
-    : { to: `/podcasts/${episode.podcast_id}/episodes/${episode.id}` };
-
   return (
     <div
       className="timeline-item episode-tile"
@@ -44,58 +25,124 @@ export default function EpisodeTile({
         "--podcast-accent": podcast.accent_color,
       } as any}
     >
-      <TileWrapper
-        className="episode-tile-link"
-        {...tileProps}
-      >
-        <div className="timeline-date">
-          {episode.filming_date
-            ? new Date(episode.filming_date).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-                weekday: "short",
-              })
-            : "No date"}
-          {episode.filming_time && (
-            <div className="timeline-time">{episode.filming_time}</div>
-          )}
-        </div>
-
-        <div className="timeline-content">
-          <div className="timeline-main">
-            <span className="podcast-tag">{podcast.name}</span>
-            <div className="episode-header">
-              <h3>{episode.title}</h3>
-            </div>
-
-            {episode.episode_number && (
-              <p className="episode-number">Episode #{episode.episode_number}</p>
+      {onEdit ? (
+        <button
+          type="button"
+          className="episode-tile-link"
+          onClick={onEdit}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            width: "100%",
+            font: "inherit",
+            textAlign: "left",
+            padding: 0,
+            margin: 0,
+          }}
+        >
+          <div className="timeline-date">
+            {episode.filming_date
+              ? new Date(episode.filming_date).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  weekday: "short",
+                })
+              : "No date"}
+            {episode.filming_time && (
+              <div className="timeline-time">{episode.filming_time}</div>
             )}
+          </div>
 
-            {currentBook && (
-              <div className="book-info">
-                <strong>📖 Book:</strong>{" "}
-                <span onClick={(e) => e.stopPropagation()}>
-                  <Link to={`/podcasts/${episode.podcast_id}/books/${currentBook.id}`}>
-                    {currentBook.title}
-                  </Link>
-                </span>{" "}
-                by {currentBook.author}
+          <div className="timeline-content">
+            <div className="timeline-main">
+              <span className="podcast-tag">{podcast.name}</span>
+              <div className="episode-header">
+                <h3>{episode.title}</h3>
               </div>
-            )}
 
-            <div className="episode-footer">
-              <span className={`status-badge status-${episode.status}`}>
-                {episode.status}
-              </span>
-              {episode.notes && (
-                <p className="episode-notes">{episode.notes}</p>
+              {episode.episode_number && (
+                <p className="episode-number">Episode #{episode.episode_number}</p>
               )}
+
+              {currentBook && (
+                <div className="book-info">
+                  <strong>📖 Book:</strong>{" "}
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <Link to={`/podcasts/${episode.podcast_id}/books/${currentBook.id}`}>
+                      {currentBook.title}
+                    </Link>
+                  </span>{" "}
+                  by {currentBook.author}
+                </div>
+              )}
+
+              <div className="episode-footer">
+                <span className={`status-badge status-${episode.status}`}>
+                  {episode.status}
+                </span>
+                {episode.notes && (
+                  <p className="episode-notes">{episode.notes}</p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </TileWrapper>
+        </button>
+      ) : (
+        <Link
+          to={`/podcasts/${episode.podcast_id}/episodes/${episode.id}`}
+          className="episode-tile-link"
+        >
+          <div className="timeline-date">
+            {episode.filming_date
+              ? new Date(episode.filming_date).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  weekday: "short",
+                })
+              : "No date"}
+            {episode.filming_time && (
+              <div className="timeline-time">{episode.filming_time}</div>
+            )}
+          </div>
+
+          <div className="timeline-content">
+            <div className="timeline-main">
+              <span className="podcast-tag">{podcast.name}</span>
+              <div className="episode-header">
+                <h3>{episode.title}</h3>
+              </div>
+
+              {episode.episode_number && (
+                <p className="episode-number">Episode #{episode.episode_number}</p>
+              )}
+
+              {currentBook && (
+                <div className="book-info">
+                  <strong>📖 Book:</strong>{" "}
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <Link to={`/podcasts/${episode.podcast_id}/books/${currentBook.id}`}>
+                      {currentBook.title}
+                    </Link>
+                  </span>{" "}
+                  by {currentBook.author}
+                </div>
+              )}
+
+              <div className="episode-footer">
+                <span className={`status-badge status-${episode.status}`}>
+                  {episode.status}
+                </span>
+                {episode.notes && (
+                  <p className="episode-notes">{episode.notes}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {currentBook && currentBook.cover_url && (
         <div className="timeline-book-cover">

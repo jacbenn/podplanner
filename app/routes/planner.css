@@ -302,3 +302,36 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.save-indicator {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.save-indicator.saving {
+  color: var(--text-secondary);
+  background-color: transparent;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.save-indicator.saved {
+  color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.save-indicator.error {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
