@@ -245,6 +245,8 @@ export default function PlannerPage() {
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const actionInputRef = useRef<HTMLInputElement>(null);
+  const agendaRef = useRef<HTMLTextAreaElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -272,20 +274,23 @@ export default function PlannerPage() {
     });
   };
 
-  const handleAgendaBlur = (value: string) => {
-    const formData = new FormData();
-    formData.append("_intent", "save_agenda");
-    formData.append("note_date", selectedDate);
-    formData.append("agenda", value);
-    fetcher.submit(formData, { method: "POST" });
-  };
+  const handleSave = () => {
+    const agenda = agendaRef.current?.value || "";
+    const notes = notesRef.current?.value || "";
 
-  const handleNotesBlur = (value: string) => {
-    const formData = new FormData();
-    formData.append("_intent", "save_notes");
-    formData.append("note_date", selectedDate);
-    formData.append("notes", value);
-    fetcher.submit(formData, { method: "POST" });
+    // Save agenda
+    const agendaFormData = new FormData();
+    agendaFormData.append("_intent", "save_agenda");
+    agendaFormData.append("note_date", selectedDate);
+    agendaFormData.append("agenda", agenda);
+    fetcher.submit(agendaFormData, { method: "POST" });
+
+    // Save notes
+    const notesFormData = new FormData();
+    notesFormData.append("_intent", "save_notes");
+    notesFormData.append("note_date", selectedDate);
+    notesFormData.append("notes", notes);
+    fetcher.submit(notesFormData, { method: "POST" });
   };
 
   const handleAddActionItem = (e: React.FormEvent<HTMLFormElement>) => {
@@ -455,10 +460,10 @@ export default function PlannerPage() {
           <h2>📋 Agenda</h2>
           <textarea
             key={`agenda-${selectedDate}`}
+            ref={agendaRef}
             className="planner-textarea"
             placeholder="What do you need to discuss?"
             defaultValue={currentNote?.agenda || ""}
-            onBlur={(e) => handleAgendaBlur(e.currentTarget.value)}
           />
         </div>
 
@@ -467,10 +472,10 @@ export default function PlannerPage() {
           <h2>📝 Notes / Outcomes</h2>
           <textarea
             key={`notes-${selectedDate}`}
+            ref={notesRef}
             className="planner-textarea"
             placeholder="What was decided? What are the outcomes?"
             defaultValue={currentNote?.notes || ""}
-            onBlur={(e) => handleNotesBlur(e.currentTarget.value)}
           />
         </div>
 
@@ -513,6 +518,17 @@ export default function PlannerPage() {
               {fetcher.state === "submitting" ? "..." : "Add"}
             </button>
           </form>
+        </div>
+
+        {/* Save Button */}
+        <div className="planner-save-section">
+          <button
+            className="btn btn-primary"
+            onClick={handleSave}
+            disabled={fetcher.state === "submitting"}
+          >
+            {fetcher.state === "submitting" ? "Saving..." : "Save Changes"}
+          </button>
         </div>
       </div>
     </div>
