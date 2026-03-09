@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs, LinksFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, useLoaderData, useParams, Link } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import styles from "./episode-form-new.css";
 
@@ -91,6 +91,7 @@ export async function action({
 export default function NewEpisodePage() {
   const { podcast } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const { podcastId } = useParams();
   const formRef = useRef<HTMLFormElement>(null);
 
   // Explicitly clear form on mount to prevent browser autofill
@@ -118,8 +119,15 @@ export default function NewEpisodePage() {
     >
       <div className="form-header">
         <div className="podcast-badge">{podcast?.name}</div>
-        <h2>Create New Episode</h2>
-        <p className="form-subtitle">Add a new episode to your podcast timeline</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h2>Create New Episode</h2>
+            <p className="form-subtitle">Add a new episode to your podcast timeline</p>
+          </div>
+          <Link to={`/podcasts/${podcastId}/planner`} style={{ color: "var(--podcast-accent, #667eea)", textDecoration: "none", fontWeight: "600" }}>
+            📋 Meeting Planner
+          </Link>
+        </div>
       </div>
 
       <Form method="post" className="form" autoComplete="off" ref={formRef}>
