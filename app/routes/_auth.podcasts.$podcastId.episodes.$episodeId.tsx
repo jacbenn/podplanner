@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs, LinksFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData, useFetcher, Link } from "@remix-run/react";
+import { useLoaderData, useFetcher, Link, useParams } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
 import type { Episode, Book, Podcast } from "~/types/models";
 import BookSearch, { links as bookSearchLinks } from "~/components/BookSearch";
@@ -172,6 +172,7 @@ export async function action({
 
 export default function EpisodeDetailPage() {
   const { episode, currentBook, podcast, books } = useLoaderData<typeof loader>();
+  const { podcastId } = useParams();
   const deleteFetcher = useFetcher();
   const bookFetcher = useFetcher();
   const editFetcher = useFetcher();
@@ -220,10 +221,17 @@ export default function EpisodeDetailPage() {
       style={{ "--podcast-accent": podcast.accent_color } as any}
     >
       <div className="podcast-header">
-        <h1>{podcast.name}</h1>
-        {podcast.description && (
-          <p className="description">{podcast.description}</p>
-        )}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <h1>{podcast.name}</h1>
+            {podcast.description && (
+              <p className="description">{podcast.description}</p>
+            )}
+          </div>
+          <Link to={`/podcasts/${podcastId}/planner${episode.filming_date ? `?date=${episode.filming_date}` : ""}`} style={{ color: "var(--podcast-accent, #667eea)", textDecoration: "none", fontWeight: "600", whiteSpace: "nowrap" }}>
+            📋 Meeting Planner
+          </Link>
+        </div>
       </div>
 
       {deleteModal && (

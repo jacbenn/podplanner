@@ -45,3 +45,20 @@ export interface User {
   email: string;
   user_metadata?: Record<string, any>;
 }
+
+export interface ActionItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface MeetingNote {
+  id: string;
+  podcast_id: string;
+  note_date: string;
+  agenda: string | null;
+  notes: string | null;
+  action_items: ActionItem[];
+  created_at: string;
+  updated_at: string;
+}
