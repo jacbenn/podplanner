@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import type {
   LoaderFunctionArgs,
   ActionFunctionArgs,
@@ -246,6 +246,22 @@ export default function PlannerPage() {
   const navigate = useNavigate();
   const actionInputRef = useRef<HTMLInputElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  // Track save status from fetcher
+  useEffect(() => {
+    if (fetcher.state === "submitting") {
+      setSaveStatus("saving");
+    } else if (fetcher.state === "idle") {
+      if (fetcher.data?.error) {
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      } else if (fetcher.data?.success) {
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      }
+    }
+  }, [fetcher.state, fetcher.data]);
 
   const formatDateDisplay = (dateStr: string) => {
     const date = new Date(dateStr + "T00:00:00");
@@ -404,7 +420,18 @@ export default function PlannerPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <h1>{podcast?.name}</h1>
-              <p>{formatDateDisplay(selectedDate)}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <p>{formatDateDisplay(selectedDate)}</p>
+                {saveStatus === "saving" && (
+                  <span className="save-indicator saving">Saving...</span>
+                )}
+                {saveStatus === "saved" && (
+                  <span className="save-indicator saved">✓ Saved</span>
+                )}
+                {saveStatus === "error" && (
+                  <span className="save-indicator error">✗ Save failed</span>
+                )}
+              </div>
             </div>
             <button
               onClick={() => window.history.back()}
