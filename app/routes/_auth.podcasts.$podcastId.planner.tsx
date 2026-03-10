@@ -110,26 +110,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    if (intent === "save_agenda") {
+    if (intent === "save_meeting_notes") {
       const agenda = formData.get("agenda") as string;
-      await supabase.from("podcast_meeting_notes").upsert(
-        {
-          podcast_id: podcastId,
-          note_date: noteDate,
-          agenda: agenda || null,
-        },
-        { onConflict: "podcast_id,note_date" }
-      );
-      return json({ success: true }, { headers });
-    }
-
-    if (intent === "save_notes") {
       const notes = formData.get("notes") as string;
       await supabase.from("podcast_meeting_notes").upsert(
         {
           podcast_id: podcastId,
           note_date: noteDate,
-          notes: notes || null,
+          agenda: agenda ?? null,
+          notes: notes ?? null,
         },
         { onConflict: "podcast_id,note_date" }
       );
@@ -275,22 +264,15 @@ export default function PlannerPage() {
   };
 
   const handleSave = () => {
-    const agenda = agendaRef.current?.value || "";
-    const notes = notesRef.current?.value || "";
+    const agenda = agendaRef.current?.value ?? "";
+    const notes = notesRef.current?.value ?? "";
 
-    // Save agenda
-    const agendaFormData = new FormData();
-    agendaFormData.append("_intent", "save_agenda");
-    agendaFormData.append("note_date", selectedDate);
-    agendaFormData.append("agenda", agenda);
-    fetcher.submit(agendaFormData, { method: "POST" });
-
-    // Save notes
-    const notesFormData = new FormData();
-    notesFormData.append("_intent", "save_notes");
-    notesFormData.append("note_date", selectedDate);
-    notesFormData.append("notes", notes);
-    fetcher.submit(notesFormData, { method: "POST" });
+    const formData = new FormData();
+    formData.append("_intent", "save_meeting_notes");
+    formData.append("note_date", selectedDate);
+    formData.append("agenda", agenda);
+    formData.append("notes", notes);
+    fetcher.submit(formData, { method: "POST" });
   };
 
   const handleAddActionItem = (e: React.FormEvent<HTMLFormElement>) => {
