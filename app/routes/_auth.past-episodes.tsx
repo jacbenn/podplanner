@@ -67,8 +67,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   today.setHours(0, 0, 0, 0);
   const pastEpisodes = allEpisodes.filter((episode) => {
     if (!episode.filming_date) return false; // Don't show episodes without dates
-    const filmingDate = new Date(episode.filming_date);
-    filmingDate.setHours(0, 0, 0, 0);
+    const filmingDate = new Date(episode.filming_date + "T00:00:00");
     return filmingDate < today;
   });
 
