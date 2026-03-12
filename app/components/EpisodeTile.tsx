@@ -43,7 +43,7 @@ export default function EpisodeTile({
         >
           <div className="timeline-date">
             {episode.filming_date
-              ? new Date(episode.filming_date).toLocaleDateString("en-US", {
+              ? new Date(episode.filming_date + "T00:00:00").toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
@@ -96,7 +96,7 @@ export default function EpisodeTile({
         >
           <div className="timeline-date">
             {episode.filming_date
-              ? new Date(episode.filming_date).toLocaleDateString("en-US", {
+              ? new Date(episode.filming_date + "T00:00:00").toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
