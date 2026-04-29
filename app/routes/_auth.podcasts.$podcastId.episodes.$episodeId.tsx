@@ -71,15 +71,16 @@ export async function loader({
   }
 
   // Fetch all books assigned to this episode via the junction table
+  const adminSupabase = createSupabaseAdminClient();
   let books: Book[] = [];
-  const { data: episodeBookLinks } = await supabase
+  const { data: episodeBookLinks } = await adminSupabase
     .from("episode_books")
     .select("book_id")
     .eq("episode_id", episodeId);
 
   if (episodeBookLinks && episodeBookLinks.length > 0) {
     const bookIds = episodeBookLinks.map((link) => link.book_id);
-    const { data: episodeBooks } = await supabase
+    const { data: episodeBooks } = await adminSupabase
       .from("books")
       .select("*")
       .in("id", bookIds);
@@ -101,7 +102,7 @@ export async function action({
   request,
   params,
 }: ActionFunctionArgs) {
-  const { supabase, headers, user } = await requireUser(request);
+  const { headers } = await requireUser(request);
   const { podcastId, episodeId } = params;
 
   if (request.method === "POST") {
