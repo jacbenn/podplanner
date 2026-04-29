@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs, ActionFunctionArgs, LinksFunction } from "@rem
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useParams, Link } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
+import { createSupabaseAdminClient } from "~/lib/supabase.server";
 import styles from "./episode-form-new.css";
 
 export const links: LinksFunction = () => [
@@ -67,7 +68,8 @@ export async function action({
     return json({ error: "Title is required" }, { status: 400, headers });
   }
 
-  const { data: episodeData, error } = await supabase
+  const adminSupabase = createSupabaseAdminClient();
+  const { data: episodeData, error } = await adminSupabase
     .from("episodes")
     .insert({
       podcast_id: podcastId,
