@@ -31,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ error: "Email and password are required" }, { status: 400 });
   }
 
-  const { supabase } = createSupabaseServerClient(request);
+  const { supabase, headers: supabaseHeaders } = createSupabaseServerClient(request);
   console.log("Attempting login for:", email);
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -43,13 +43,16 @@ export async function action({ request }: ActionFunctionArgs) {
   console.log("Login successful, user:", data.user?.email);
 
   // Create session and redirect
-  const { headers, redirectTo } = await createUserSession(
+  const { headers: sessionHeaders, redirectTo } = await createUserSession(
     data.user!.id,
     data.user!.email!,
     "/"
   );
 
-  return redirect(redirectTo, { headers });
+  // Merge Supabase JWT cookies with the custom session cookie so RLS auth.uid() works
+  supabaseHeaders.append("Set-Cookie", sessionHeaders["Set-Cookie"]);
+
+  return redirect(redirectTo, { headers: supabaseHeaders });
 }
 
 export default function LoginPage() {
