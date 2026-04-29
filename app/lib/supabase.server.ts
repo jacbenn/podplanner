@@ -1,8 +1,10 @@
 import pkg from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 const { createServerClient, parseCookieHeader, serializeCookieHeader } = pkg;
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export function createSupabaseServerClient(request: Request) {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
@@ -36,4 +38,13 @@ export function createSupabaseServerClient(request: Request) {
   );
 
   return { supabase, headers };
+}
+
+export function createSupabaseAdminClient() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("Missing Supabase env: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
+  }
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }

@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs, ActionFunctionArgs, LinksFunction } from "@rem
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useFetcher, Link, useParams } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
+import { createSupabaseAdminClient } from "~/lib/supabase.server";
 import type { Episode, Book, Podcast } from "~/types/models";
 import BookSearch, { links as bookSearchLinks } from "~/components/BookSearch";
 import EpisodeTile from "~/components/EpisodeTile";
@@ -119,7 +120,8 @@ export async function action({
       return json({ error: "Title is required" }, { status: 400, headers });
     }
 
-    const { error } = await supabase
+    const adminSupabase = createSupabaseAdminClient();
+    const { error } = await adminSupabase
       .from("episodes")
       .update({
         title,
@@ -152,7 +154,8 @@ export async function action({
     return json({ error: "Missing type or id" }, { status: 400 });
   }
 
-  const { error } = await supabase
+  const adminSupabase = createSupabaseAdminClient();
+  const { error } = await adminSupabase
     .from(type === "episode" ? "episodes" : "books")
     .delete()
     .eq("id", id)
