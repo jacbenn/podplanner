@@ -3,7 +3,7 @@ import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData } from "@remix-run/react";
 import { requireUser } from "~/utils/auth.server";
-import { createSupabaseServerClient } from "~/lib/supabase.server";
+import { createSupabaseAdminClient } from "~/lib/supabase.server";
 import BookSearch from "~/components/BookSearch";
 
 export async function loader({
@@ -36,7 +36,7 @@ export async function action({
   request,
   params,
 }: ActionFunctionArgs) {
-  const { supabase, headers, user } = await requireUser(request);
+  const { headers } = await requireUser(request);
   const { podcastId } = params;
 
   if (request.method !== "POST") {
@@ -58,7 +58,9 @@ export async function action({
     );
   }
 
-  const { data: bookData, error: bookError } = await supabase
+  const adminSupabase = createSupabaseAdminClient();
+
+  const { data: bookData, error: bookError } = await adminSupabase
     .from("books")
     .insert({
       podcast_id: podcastId,
@@ -77,8 +79,7 @@ export async function action({
 
   // If episode_id is provided, link the book to the episode
   if (episodeId && bookData) {
-    // Insert into episode_books junction table
-    const { error: linkError } = await supabase
+    const { error: linkError } = await adminSupabase
       .from("episode_books")
       .insert({ episode_id: episodeId, book_id: bookData.id });
 
@@ -87,7 +88,7 @@ export async function action({
     }
 
     // If this is the first book for the episode, also set episode.book_id
-    const { data: existingEpisode } = await supabase
+    const { data: existingEpisode } = await adminSupabase
       .from("episodes")
       .select("book_id")
       .eq("id", episodeId)
@@ -95,7 +96,7 @@ export async function action({
       .single();
 
     if (!existingEpisode?.book_id) {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await adminSupabase
         .from("episodes")
         .update({ book_id: bookData.id })
         .eq("id", episodeId)
